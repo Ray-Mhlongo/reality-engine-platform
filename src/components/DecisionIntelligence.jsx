@@ -138,12 +138,12 @@ function RelationshipMap({ graph }) {
                     cx={node.x}
                     cy={node.y}
                     r={node.size / 12}
-                    fill={node.type === "metric" ? "#0a0a0a" : "#f2c94c"}
+                    fill={node.type === "metric" ? "#f2c94c" : "#ffffff"}
                     opacity={activeNodeState ? 1 : 0.74}
-                    stroke={activeNodeState ? "#ffffff" : "rgba(255,255,255,0.35)"}
+                    stroke={activeNodeState ? "#0a0a0a" : "rgba(10,10,10,0.35)"}
                     strokeWidth="0.6"
                   />
-                  <text x={node.x} y={node.y + node.size / 12 + 4} textAnchor="middle" fill="rgba(255,255,255,0.82)" fontSize="3" fontWeight="700">
+                  <text x={node.x} y={node.y + node.size / 12 + 4} textAnchor="middle" fill="#0a0a0a" fontSize="3" fontWeight="700">
                     {node.label.length > 14 ? `${node.label.slice(0, 13)}...` : node.label}
                   </text>
                 </g>
@@ -349,7 +349,7 @@ function EarlyWarningSystem({ warnings }) {
           <article key={`${warning.title}-${warning.severity}`} className={`rounded-lg border p-4 ${color[warning.severity] || color.Low}`}>
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-extrabold text-white">{warning.title}</h3>
-              <span className="rounded bg-black/20 px-2 py-1 text-xs font-black uppercase tracking-[0.12em]">{warning.severity}</span>
+              <span className="rounded bg-white/[0.75] px-2 py-1 text-xs font-black uppercase tracking-[0.12em] text-ink">{warning.severity}</span>
             </div>
             <p className="mt-2 text-sm leading-6 text-white/66">{warning.detail}</p>
           </article>

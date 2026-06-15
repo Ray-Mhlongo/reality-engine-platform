@@ -131,7 +131,7 @@ export function CaseStudyModal() {
         <BookOpen size={18} /> View case study
       </button>
       {open ? (
-        <div className="fixed inset-0 z-40 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-40 grid place-items-center bg-white/90 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="max-h-[88vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-white/10 bg-steel p-5 shadow-panel">
             <div className="flex items-start justify-between gap-4">
               <div>

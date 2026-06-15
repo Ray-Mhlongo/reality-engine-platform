@@ -60,6 +60,8 @@ canvas {
 }
 
 #root .bg-steel,
+#root .bg-black\/20,
+#root .bg-black\/70,
 #root .bg-white\/\[0\.03\],
 #root .bg-white\/\[0\.035\],
 #root .bg-white\/\[0\.04\],
@@ -73,6 +75,11 @@ canvas {
 #root .bg-signal,
 #root .bg-amber {
   background-color: #f2c94c !important;
+}
+
+#root .bg-red-400\/10,
+#root .bg-red-300\/10 {
+  background-color: #fff7e0 !important;
 }
 
 #root .bg-signal\/10,
@@ -115,7 +122,9 @@ canvas {
 
 #root .text-signal,
 #root .text-amber,
-#root .text-iris {
+#root .text-iris,
+#root .text-red-200,
+#root .text-red-300 {
   color: #c99a00 !important;
 }
 

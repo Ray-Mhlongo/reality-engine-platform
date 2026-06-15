@@ -1,4 +1,5 @@
 import { analyzeDataset, answerQuestion, runScenario } from "../src/lib/analysis.js";
+import { parseDataFile } from "../src/lib/parser.js";
 
 const cases = [
   {
@@ -95,7 +96,18 @@ for (const testCase of cases) {
   }
 }
 
-console.log(`Reality Engine QA passed ${cases.length} dataset scenarios.`);
+const parsedNormalCsv = await parseDataFile(csvFile("normal.csv", "Date,Region,Sales\n2026-01-01,North,100\n2026-01-02,South,120"));
+assert(parsedNormalCsv.rows.length === 2, "CSV parser: normal CSV should produce two rows");
+assert(parsedNormalCsv.columns.includes("Sales"), "CSV parser: normal CSV should preserve headers");
+
+const parsedMessyCsv = await parseDataFile(csvFile("messy.csv", "\n Messy Sales , ,Region\n100,,North\n, ,\n240,,South\n"));
+assert(parsedMessyCsv.rows.length === 2, "CSV parser: messy CSV should drop blank rows");
+assert(parsedMessyCsv.columns.length === 3, "CSV parser: messy CSV should create safe missing headers");
+
+await expectReject(() => parseDataFile(csvFile("empty.csv", "")), "CSV parser: empty file should reject");
+await expectReject(() => parseDataFile(new File(["hello"], "bad.txt", { type: "text/plain" })), "Parser: invalid file type should reject");
+
+console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser checks.`);
 
 function dataset(table) {
   const columns = table[0];
@@ -120,4 +132,17 @@ function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function csvFile(name, content) {
+  return new File([content], name, { type: "text/csv" });
+}
+
+async function expectReject(task, message) {
+  try {
+    await task();
+  } catch {
+    return;
+  }
+  throw new Error(message);
 }
