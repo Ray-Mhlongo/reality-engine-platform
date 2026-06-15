@@ -5,19 +5,19 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["Poppins", "ui-sans-serif", "system-ui", "sans-serif"]
       },
       colors: {
-        ink: "#0d1117",
-        steel: "#18202d",
-        panel: "#101722",
-        signal: "#37d9a4",
-        amber: "#f5c451",
-        iris: "#7c87ff"
+        ink: "#0a0a0a",
+        steel: "#f7f7f2",
+        panel: "#ffffff",
+        signal: "#f2c94c",
+        amber: "#f2c94c",
+        iris: "#0e2431"
       },
       boxShadow: {
-        glow: "0 20px 80px rgba(55, 217, 164, 0.16)",
-        panel: "0 18px 55px rgba(3, 7, 18, 0.38)"
+        glow: "0 18px 44px rgba(10, 10, 10, 0.12)",
+        panel: "0 18px 44px rgba(10, 10, 10, 0.12)"
       }
     }
   },

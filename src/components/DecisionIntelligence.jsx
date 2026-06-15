@@ -124,7 +124,7 @@ function RelationshipMap({ graph }) {
                   y1={from.y}
                   x2={to.x}
                   y2={to.y}
-                  stroke={activeEdge ? "#37d9a4" : "rgba(255,255,255,0.18)"}
+                  stroke={activeEdge ? "#f2c94c" : "rgba(10,10,10,0.18)"}
                   strokeWidth={Math.max(0.4, edge.strength * 2.2)}
                   strokeLinecap="round"
                 />
@@ -138,7 +138,7 @@ function RelationshipMap({ graph }) {
                     cx={node.x}
                     cy={node.y}
                     r={node.size / 12}
-                    fill={node.type === "metric" ? "#f5c451" : "#37d9a4"}
+                    fill={node.type === "metric" ? "#0a0a0a" : "#f2c94c"}
                     opacity={activeNodeState ? 1 : 0.74}
                     stroke={activeNodeState ? "#ffffff" : "rgba(255,255,255,0.35)"}
                     strokeWidth="0.6"
@@ -192,8 +192,8 @@ function ForecastingEngine({ forecasts }) {
         {
           label: "Projected",
           data: [active.projected / (1 + active.growth / 100 || 1), active.projected],
-          borderColor: "#37d9a4",
-          backgroundColor: "rgba(55,217,164,0.14)",
+          borderColor: "#f2c94c",
+          backgroundColor: "rgba(242,201,76,0.18)",
           fill: true,
           tension: 0.35
         },

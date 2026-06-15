@@ -1,15 +1,15 @@
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import { titleCase } from "../lib/format";
 
-const grid = "rgba(255,255,255,0.08)";
-const ticks = "rgba(247,251,255,0.72)";
+const grid = "rgba(10,10,10,0.08)";
+const ticks = "rgba(10,10,10,0.62)";
 
 export const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: { labels: { color: ticks, boxWidth: 10, boxHeight: 10 } },
-    tooltip: { backgroundColor: "#0d1117", borderColor: "rgba(255,255,255,0.14)", borderWidth: 1 }
+    tooltip: { backgroundColor: "#0a0a0a", borderColor: "rgba(242,201,76,0.5)", borderWidth: 1 }
   },
   scales: {
     x: { grid: { color: grid }, ticks: { color: ticks } },
@@ -28,8 +28,8 @@ export function TrendChart({ trend }) {
           {
             label: titleCase(trend.column),
             data: trend.points.slice(-16).map((point) => point.value),
-            borderColor: "#37d9a4",
-            backgroundColor: "rgba(55,217,164,0.16)",
+            borderColor: "#f2c94c",
+            backgroundColor: "rgba(242,201,76,0.18)",
             fill: true,
             tension: 0.35,
             pointRadius: 2
@@ -51,7 +51,7 @@ export function SegmentChart({ performance }) {
           {
             label: titleCase(performance.valueColumn),
             data: performance.ranked.map((item) => item.total),
-            backgroundColor: ["#37d9a4", "#f5c451", "#7c87ff", "#58a6ff", "#ff7a90", "#a7f3d0", "#fca5a5", "#c4b5fd"],
+            backgroundColor: ["#0a0a0a", "#f2c94c", "#555555", "#888888", "#c99a00", "#e6e1d0", "#f7f7f2", "#222222"],
             borderRadius: 4
           }
         ]
@@ -69,7 +69,7 @@ export function QualityChart({ analysis }) {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { backgroundColor: "#0d1117" }
+          tooltip: { backgroundColor: "#0a0a0a" }
         },
         cutout: "72%"
       }}
@@ -78,7 +78,7 @@ export function QualityChart({ analysis }) {
         datasets: [
           {
             data: [score, 100 - score],
-            backgroundColor: ["#37d9a4", "rgba(255,255,255,0.08)"],
+            backgroundColor: ["#f2c94c", "rgba(10,10,10,0.08)"],
             borderWidth: 0
           }
         ]
