@@ -107,7 +107,25 @@ assert(parsedMessyCsv.columns.length === 3, "CSV parser: messy CSV should create
 await expectReject(() => parseDataFile(csvFile("empty.csv", "")), "CSV parser: empty file should reject");
 await expectReject(() => parseDataFile(new File(["hello"], "bad.txt", { type: "text/plain" })), "Parser: invalid file type should reject");
 
-console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser checks.`);
+const activeFlowA = simulateActiveUpload("uploaded-a.csv", parsedNormalCsv);
+const activeFlowB = simulateActiveUpload(
+  "uploaded-b.csv",
+  dataset([
+    ["Date", "Region", "Revenue", "Churn"],
+    ["2026-01-01", "East", "500", "1"],
+    ["2026-01-08", "East", "800", "2"],
+    ["2026-01-15", "West", "1200", "6"],
+    ["2026-01-22", "West", "1800", "8"],
+    ["2026-02-01", "West", "2400", "10"]
+  ])
+);
+assert(activeFlowA.activeSource === "uploaded" && activeFlowA.isDemoMode === false, "Active flow: upload must exit demo mode");
+assert(activeFlowA.activeFileName === "uploaded-a.csv", "Active flow: file name must be stored");
+assert(activeFlowA.rowCount !== activeFlowB.rowCount, "Active flow: row count must reflect uploaded file");
+assert(activeFlowA.qualityScore !== activeFlowB.qualityScore || activeFlowA.report !== activeFlowB.report, "Active flow: different uploads must produce different analysis output");
+assert(activeFlowA.scenario?.baseline !== activeFlowB.scenario?.baseline, "Active flow: simulation must recalculate from uploaded rows");
+
+console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser and active-dataset checks.`);
 
 function dataset(table) {
   const columns = table[0];
@@ -145,4 +163,22 @@ async function expectReject(task, message) {
     return;
   }
   throw new Error(message);
+}
+
+function simulateActiveUpload(activeFileName, activeDataset) {
+  const analysis = analyzeDataset(activeDataset);
+  return {
+    activeDataset,
+    activeFileName,
+    activeSource: "uploaded",
+    isDemoMode: false,
+    rowCount: activeDataset.metadata.rowCount,
+    columnCount: activeDataset.metadata.columnCount,
+    qualityScore: analysis.qualityScore,
+    report: analysis.intelligence.executiveSummary.join(" "),
+    discoveryCount: analysis.discoveryFeed.length,
+    investigation: analysis.investigation,
+    boardroom: analysis.boardroom,
+    scenario: runScenario({ analysis, dataset: activeDataset, changePercent: 10 })
+  };
 }

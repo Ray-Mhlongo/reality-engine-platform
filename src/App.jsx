@@ -58,32 +58,76 @@ const sampleDataset = {
   }
 };
 
+const emptyDataset = {
+  rows: [],
+  columns: [],
+  metadata: {
+    rowCount: 0,
+    columnCount: 0,
+    importedAt: new Date().toISOString()
+  }
+};
+
+const processingSteps = [
+  "Reading file",
+  "Parsing rows",
+  "Profiling dataset",
+  "Generating discoveries",
+  "Running decision intelligence",
+  "Analysis complete"
+];
+
 export default function App() {
-  const [dataset, setDataset] = useState(sampleDataset);
-  const [fileName, setFileName] = useState("venture-sample.csv");
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [activeDataset, setActiveDataset] = useState(sampleDataset);
+  const [activeFileName, setActiveFileName] = useState("venture-sample.csv");
+  const [activeSource, setActiveSource] = useState("demo");
+  const [lastAnalyzedAt, setLastAnalyzedAt] = useState(new Date().toISOString());
+  const [processingStep, setProcessingStep] = useState("Analysis complete");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const analysis = useMemo(() => analyzeDataset(dataset), [dataset]);
+  const isDemoMode = activeSource === "demo";
+  const analysis = useMemo(() => analyzeDataset(activeDataset), [activeDataset, activeSource, lastAnalyzedAt]);
   const [scenario, setScenario] = useState(() => runScenario({ analysis: analyzeDataset(sampleDataset), dataset: sampleDataset, changePercent: 10 }));
-  const validationMessages = useMemo(() => getValidationMessages(dataset, analysis, isDemoMode), [dataset, analysis, isDemoMode]);
+  const validationMessages = useMemo(() => getValidationMessages(activeDataset, analysis, isDemoMode, activeSource), [activeDataset, analysis, isDemoMode, activeSource]);
+  const datasetStatus = useMemo(
+    () => ({
+      fileName: activeFileName,
+      source: activeSource,
+      isDemoMode,
+      rowCount: activeDataset.metadata?.rowCount || activeDataset.rows.length,
+      columnCount: activeDataset.metadata?.columnCount || activeDataset.columns.length,
+      headers: activeDataset.columns,
+      lastAnalyzedAt,
+      processingStep,
+      analysisGenerated: Boolean(analysis),
+      componentsReceivingUploadedData: activeSource === "uploaded" && !isDemoMode
+    }),
+    [activeDataset, activeFileName, activeSource, analysis, isDemoMode, lastAnalyzedAt, processingStep]
+  );
 
   async function handleFile(file) {
     setIsLoading(true);
     setError("");
     try {
+      setProcessingStep("Reading file");
+      await waitForUi();
+      setProcessingStep("Parsing rows");
       const parsed = await parseDataFile(file);
+      setProcessingStep("Profiling dataset");
       const nextAnalysis = analyzeDataset(parsed);
       if (!parsed.rows.length) {
         throw new Error("No file uploaded or the file does not contain usable rows.");
       }
-      if (!nextAnalysis.numericColumns.length) {
-        throw new Error("No numeric columns detected. Add fields such as sales, revenue, cost, quantity, or customers.");
-      }
-      setDataset(parsed);
-      setFileName(file.name);
-      setIsDemoMode(false);
+      setProcessingStep("Generating discoveries");
+      await waitForUi();
+      setProcessingStep("Running decision intelligence");
+      await waitForUi();
+      setActiveDataset(parsed);
+      setActiveFileName(file.name);
+      setActiveSource("uploaded");
+      setLastAnalyzedAt(new Date().toISOString());
       setScenario(runScenario({ analysis: nextAnalysis, dataset: parsed, changePercent: 10 }));
+      setProcessingStep("Analysis complete");
       await persistDatasetMetadata(parsed.metadata, {
         qualityScore: nextAnalysis.qualityScore,
         columns: nextAnalysis.columnProfiles
@@ -97,10 +141,22 @@ export default function App() {
 
   function loadSample() {
     const nextAnalysis = analyzeDataset(sampleDataset);
-    setDataset(sampleDataset);
-    setFileName("venture-sample.csv");
-    setIsDemoMode(true);
+    setActiveDataset(sampleDataset);
+    setActiveFileName("venture-sample.csv");
+    setActiveSource("demo");
+    setLastAnalyzedAt(new Date().toISOString());
+    setProcessingStep("Analysis complete");
     setScenario(runScenario({ analysis: nextAnalysis, dataset: sampleDataset, changePercent: 10 }));
+    setError("");
+  }
+
+  function clearUploadedFile() {
+    setActiveDataset(emptyDataset);
+    setActiveFileName("No active file");
+    setActiveSource("none");
+    setLastAnalyzedAt(new Date().toISOString());
+    setProcessingStep("Analysis complete");
+    setScenario(null);
     setError("");
   }
 
@@ -114,19 +170,22 @@ export default function App() {
           onFile={handleFile}
           isLoading={isLoading}
           error={error}
-          fileName={fileName}
+          fileName={activeFileName}
           onLoadSample={loadSample}
+          onClearUploadedFile={clearUploadedFile}
           isDemoMode={isDemoMode}
           validationMessages={validationMessages}
+          datasetStatus={datasetStatus}
+          processingSteps={processingSteps}
         />
         <PrivacyNotice />
         <DecisionIntelligence analysis={analysis} />
-        <Dashboard dataset={dataset} analysis={analysis} scenario={scenario} />
+        <Dashboard dataset={activeDataset} analysis={analysis} scenario={scenario} />
         <IntelligenceReport intelligence={analysis.intelligence} analysis={analysis} scenario={scenario} />
         <ExportCenter analysis={analysis} scenario={scenario} />
         <div className="grid gap-5 xl:grid-cols-[0.58fr_0.42fr]">
-          <Assistant dataset={dataset} analysis={analysis} />
-          <SimulationEngine dataset={dataset} analysis={analysis} scenario={scenario} onScenario={setScenario} />
+          <Assistant dataset={activeDataset} analysis={analysis} />
+          <SimulationEngine dataset={activeDataset} analysis={analysis} scenario={scenario} onScenario={setScenario} />
         </div>
         <Architecture />
       </main>
@@ -222,7 +281,7 @@ function Hero({ onLoadSample }) {
   );
 }
 
-function getValidationMessages(dataset, analysis, isDemoMode) {
+function getValidationMessages(dataset, analysis, isDemoMode, activeSource) {
   const messages = [];
   if (!dataset?.rows?.length) {
     messages.push({ type: "error", title: "No file uploaded", body: "Upload a CSV/XLSX file or load demo mode to start the investigation." });
@@ -240,7 +299,14 @@ function getValidationMessages(dataset, analysis, isDemoMode) {
   if (isDemoMode) {
     messages.push({ type: "info", title: "Demo mode active", body: "Recruiters can test the full system using sample business data without uploading a file." });
   }
+  if (activeSource === "uploaded") {
+    messages.push({ type: "info", title: "Uploaded file active", body: "Every section is now using the uploaded dataset as the active source of truth." });
+  }
   return messages;
+}
+
+function waitForUi() {
+  return new Promise((resolve) => setTimeout(resolve, 40));
 }
 
 function VisualStep({ icon: Icon, title, body }) {

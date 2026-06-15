@@ -9,7 +9,7 @@ export const chartOptions = {
   maintainAspectRatio: false,
   plugins: {
     legend: { labels: { color: ticks, boxWidth: 10, boxHeight: 10 } },
-    tooltip: { backgroundColor: "#0a0a0a", borderColor: "rgba(242,201,76,0.5)", borderWidth: 1 }
+    tooltip: { backgroundColor: "#ffffff", titleColor: "#0a0a0a", bodyColor: "#0a0a0a", borderColor: "#e6e1d0", borderWidth: 1 }
   },
   scales: {
     x: { grid: { color: grid }, ticks: { color: ticks } },
@@ -51,7 +51,7 @@ export function SegmentChart({ performance }) {
           {
             label: titleCase(performance.valueColumn),
             data: performance.ranked.map((item) => item.total),
-            backgroundColor: ["#0a0a0a", "#f2c94c", "#555555", "#888888", "#c99a00", "#e6e1d0", "#f7f7f2", "#222222"],
+            backgroundColor: ["#f2c94c", "#c99a00", "#e6e1d0", "#f7f7f2", "#777777", "#b8a23a", "#ded6bd", "#aaaaaa"],
             borderRadius: 4
           }
         ]
@@ -69,7 +69,7 @@ export function QualityChart({ analysis }) {
         maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
-          tooltip: { backgroundColor: "#0a0a0a" }
+          tooltip: { backgroundColor: "#ffffff", titleColor: "#0a0a0a", bodyColor: "#0a0a0a", borderColor: "#e6e1d0", borderWidth: 1 }
         },
         cutout: "72%"
       }}
@@ -98,7 +98,7 @@ export function ScenarioChart({ scenario }) {
           {
             label: titleCase(scenario.column),
             data: [scenario.baseline, scenario.projected],
-            backgroundColor: ["rgba(255,255,255,0.22)", "#f5c451"],
+            backgroundColor: ["#e6e1d0", "#f2c94c"],
             borderRadius: 4
           }
         ]

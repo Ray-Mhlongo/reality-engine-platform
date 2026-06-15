@@ -1,5 +1,5 @@
 import { Activity, Calculator } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { runScenario } from "../lib/analysis";
 import { formatNumber, formatPercent, titleCase } from "../lib/format";
 
@@ -7,9 +7,21 @@ export function SimulationEngine({ dataset, analysis, scenario, onScenario }) {
   const [targetColumn, setTargetColumn] = useState(analysis.numericColumns[0]?.name || "");
   const [changePercent, setChangePercent] = useState(10);
   const measures = useMemo(() => analysis.numericColumns, [analysis]);
+  const canSimulate = measures.length > 0;
+
+  useEffect(() => {
+    if (!measures.some((measure) => measure.name === targetColumn)) {
+      setTargetColumn(measures[0]?.name || "");
+    }
+  }, [measures, targetColumn]);
 
   function execute(nextChange = changePercent) {
-    const result = runScenario({ analysis, dataset, targetColumn, changePercent: Number(nextChange) });
+    const nextTarget = measures.some((measure) => measure.name === targetColumn) ? targetColumn : measures[0]?.name;
+    if (!nextTarget) {
+      onScenario(null);
+      return;
+    }
+    const result = runScenario({ analysis, dataset, targetColumn: nextTarget, changePercent: Number(nextChange) });
     onScenario(result);
   }
 
@@ -26,12 +38,16 @@ export function SimulationEngine({ dataset, analysis, scenario, onScenario }) {
           <div className="mt-5 grid gap-3">
             <label className="grid gap-2">
               <span className="text-sm font-bold text-white/68">Target measure</span>
-              <select className="control" value={targetColumn} onChange={(event) => setTargetColumn(event.target.value)}>
-                {measures.map((measure) => (
-                  <option key={measure.name} value={measure.name}>
-                    {titleCase(measure.name)}
-                  </option>
-                ))}
+              <select className="control" value={targetColumn} onChange={(event) => setTargetColumn(event.target.value)} disabled={!canSimulate}>
+                {canSimulate ? (
+                  measures.map((measure) => (
+                    <option key={measure.name} value={measure.name}>
+                      {titleCase(measure.name)}
+                    </option>
+                  ))
+                ) : (
+                  <option value="">No numeric columns found</option>
+                )}
               </select>
             </label>
 
@@ -64,6 +80,7 @@ export function SimulationEngine({ dataset, analysis, scenario, onScenario }) {
                   key={preset.label}
                   type="button"
                   className="secondary-button px-2"
+                  disabled={!canSimulate}
                   onClick={() => {
                     setChangePercent(preset.value);
                     execute(preset.value);
@@ -74,9 +91,10 @@ export function SimulationEngine({ dataset, analysis, scenario, onScenario }) {
               ))}
             </div>
 
-            <button className="primary-button" type="button" onClick={() => execute()}>
+            <button className="primary-button" type="button" onClick={() => execute()} disabled={!canSimulate}>
               <Calculator size={18} /> Run simulation
             </button>
+            {!canSimulate ? <p className="text-sm font-semibold text-white/62">No numeric columns found, so what-if simulation is unavailable for this dataset.</p> : null}
           </div>
         </div>
 
