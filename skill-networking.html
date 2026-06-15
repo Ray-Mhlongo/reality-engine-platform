@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Networking showcase by Ray Mhlongo using Wireshark packet data." />
+  <title>Networking Showcase | Ray Mhlongo</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=13" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="l-header"><nav class="nav bd-grid"><div><a href="index.html" class="nav-logo">Ray Mhlongo</a></div><div class="nav-menu" id="nav-menu">        <ul class="nav-list">
+          <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="projects.html" class="nav-link">Projects</a></li>
+          <li class="nav-item"><a href="products.html" class="nav-link">Products</a></li>
+          <li class="nav-item"><a href="reality-engine.html" class="nav-link">Reality Engine</a></li>
+          <li class="nav-item nav-dropdown">
+            <button class="nav-link nav-dropdown-toggle active" type="button" aria-expanded="false">
+              Skills <i class="bx bx-chevron-down" aria-hidden="true"></i>
+            </button>
+            <ul class="nav-dropdown-menu" aria-label="Skills list">
+              <li><a href="skill-sql.html" class="nav-dropdown-link">SQL</a></li>
+              <li><a href="skill-postgres.html" class="nav-dropdown-link">PostgreSQL</a></li>
+              <li><a href="skill-power-query.html" class="nav-dropdown-link">Power Query</a></li>
+              <li><a href="skill-excel.html" class="nav-dropdown-link">Excel</a></li>
+              <li><a href="skill-python.html" class="nav-dropdown-link">Python</a></li>
+              <li><a href="skill-networking.html" class="nav-dropdown-link active">Networking</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a href="ray-ai.html" class="nav-link">Ray AI</a></li>
+          <li class="nav-item"><a href="why-hire-me.html" class="nav-link">Why Hire Me</a></li>
+          <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+        </ul></div><div class="nav-toggle" id="nav-toggle"><i class="bx bx-menu"></i></div></nav></header>
+
+  <main id="main-content" class="l-main">
+    <section class="about section">
+      <h2 class="section-title">Networking Showcase</h2>
+      <div class="about-container bd-grid">
+        <div class="project-visual">Packets<br>Hosts<br>Traffic</div>
+        <div>
+          <h2 class="about-subtitle">Packet flow and device monitoring</h2>
+          <p class="about-text">I used the Wireshark style packet logs to demonstrate network monitoring, protocol review, IP analysis, and troubleshooting thinking.</p>
+          <a href="index.html" class="button">Back Home</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section showcase-section">
+      <h2 class="section-title">Project Structure</h2>
+      <div class="case-container bd-grid">
+        <article class="case-card"><h3>Business Problem</h3><p>A technical team needs a fast way to understand traffic flow and identify the busiest hosts in a packet capture.</p></article>
+        <article class="case-card"><h3>Dataset Overview</h3><p>The provided logs include broadcast discovery, ARP lookups, ICMP replies, TCP sessions, DNS requests, and TLS traffic.</p></article>
+        <article class="case-card"><h3>Solution Approach</h3><p>I summarized protocols, monitored active hosts, and displayed packet flow in a Cisco/Wireshark inspired layout.</p></article>
+        <article class="case-card"><h3>Technologies Used</h3><p>Wireshark concepts, packet analysis, IP review, device monitoring, CSV data, and troubleshooting workflow.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Network Demo</h2>
+      <div class="skill-showcase bd-grid">
+        <div class="topology-card">
+          <div class="device router">Router</div>
+          <div class="packet-flow"></div>
+          <div class="device switch">Switch</div>
+          <div class="device host">192.167.7.162</div>
+          <div class="device cloud">Internet</div>
+        </div>
+        <div>
+          <ul class="network-list">
+            <li>Top source host: 192.167.7.162 with 116,067 packets.</li>
+            <li>Top destination host: 192.167.7.162 with 276,849 packets.</li>
+            <li>Main protocol: TCP with 314,873 packet records.</li>
+            <li>Security review area: encrypted TLSv1.3 sessions and high volume hosts.</li>
+          </ul>
+        </div>
+        <div class="table-scroll wide">
+          <table>
+            <thead><tr><th>Time</th><th>Source</th><th>Destination</th><th>Protocol</th><th>Info</th></tr></thead>
+            <tbody>
+              <tr><td>0.000000</td><td>192.167.8.166</td><td>192.167.255.255</td><td>NBNS</td><td>Name query NB WPAD</td></tr>
+              <tr><td>1.169060</td><td>VMware_8a:5c:e6</td><td>Broadcast</td><td>ARP</td><td>Who has 192.167.7.175?</td></tr>
+              <tr><td>42.531677</td><td>192.167.7.157</td><td>255.255.255.255</td><td>ICMP</td><td>Echo reply connectivity check</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Final Outcome</h2>
+      <div class="insight-container bd-grid">
+        <article class="insight-card"><h3>Key Insight</h3><p>The capture is dominated by TCP and encrypted traffic, while ARP and ICMP help explain local discovery and connectivity checks.</p></article>
+        <article class="insight-card"><h3>Monitoring</h3><p>The topology and indicators help show how I think through routers, switches, hosts, packet flow, and investigation priority.</p></article>
+        <article class="insight-card"><h3>Business Value</h3><p>The section shows practical networking awareness alongside data analysis skills.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><p class="footer-title">Ray Mhlongo</p><p>&#169; <span id="year"></span> Ray Mhlongo</p></footer>
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <script src="portfolioData.js?v=1"></script>
+  <script src="projectsData.js?v=1"></script>
+  <script src="productsData.js?v=1"></script>
+  <script src="skillsData.js?v=1"></script>
+  <script src="certificationsData.js?v=1"></script>
+  <script src="experienceData.js?v=1"></script>
+  <script src="educationData.js?v=1"></script>
+  <script src="servicesData.js?v=1"></script>
+  <script src="contactData.js?v=1"></script>
+  <script src="aiContextBuilder.js?v=1"></script>
+  <script src="script.js?v=13"></script>
+</body>
+</html>

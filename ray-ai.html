@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Ray AI portfolio assistant by Ray Mhlongo." />
+  <title>Ray AI | Ray Mhlongo</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=13" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="l-header">
+    <nav class="nav bd-grid">
+      <div><a href="index.html" class="nav-logo">Ray Mhlongo</a></div>
+      <div class="nav-menu" id="nav-menu">
+                <ul class="nav-list">
+          <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="projects.html" class="nav-link">Projects</a></li>
+          <li class="nav-item"><a href="products.html" class="nav-link">Products</a></li>
+          <li class="nav-item"><a href="reality-engine.html" class="nav-link">Reality Engine</a></li>
+          <li class="nav-item nav-dropdown">
+            <button class="nav-link nav-dropdown-toggle" type="button" aria-expanded="false">
+              Skills <i class="bx bx-chevron-down" aria-hidden="true"></i>
+            </button>
+            <ul class="nav-dropdown-menu" aria-label="Skills list">
+              <li><a href="skill-sql.html" class="nav-dropdown-link">SQL</a></li>
+              <li><a href="skill-postgres.html" class="nav-dropdown-link">PostgreSQL</a></li>
+              <li><a href="skill-power-query.html" class="nav-dropdown-link">Power Query</a></li>
+              <li><a href="skill-excel.html" class="nav-dropdown-link">Excel</a></li>
+              <li><a href="skill-python.html" class="nav-dropdown-link">Python</a></li>
+              <li><a href="skill-networking.html" class="nav-dropdown-link">Networking</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a href="ray-ai.html" class="nav-link active">Ray AI</a></li>
+          <li class="nav-item"><a href="why-hire-me.html" class="nav-link">Why Hire Me</a></li>
+          <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+        </ul>
+      </div>
+      <div class="nav-toggle" id="nav-toggle"><i class="bx bx-menu"></i></div>
+    </nav>
+  </header>
+
+  <main id="main-content" class="l-main">
+    <section class="ray-ai-section section" aria-labelledby="ray-ai-title">
+      <h2 class="section-title" id="ray-ai-title">Ray AI</h2>
+      <div class="ray-ai-showcase bd-grid">
+        <div class="ray-ai-copy">
+          <p class="project-meta">Portfolio intelligence assistant</p>
+          <h3>Talk to Ray AI inside the portfolio.</h3>
+          <p>Ask about my projects, products, skills, certifications, experience, dashboards, and career direction.</p>
+          <div class="ray-ai-stats" aria-label="Ray AI coverage">
+            <span><strong>Projects</strong> explained</span>
+            <span><strong>Products</strong> covered</span>
+            <span><strong>Career</strong> ready</span>
+          </div>
+        </div>
+
+        <div class="ray-ai-panel" data-ray-ai-inline>
+          <div class="ray-ai-panel-header">
+            <div>
+              <p>Ray AI</p>
+              <span>Ask me anything about my portfolio, projects, products, skills, or career journey.</span>
+            </div>
+            <span class="ray-ai-avatar" aria-hidden="true">R</span>
+          </div>
+          <div class="ray-ai-greeting">
+            <p><span>Hello, Guest</span></p>
+            <p>How can I help you today?</p>
+            <small data-ray-ai-helper>Ask me about my SQL projects</small>
+          </div>
+          <div class="ray-ai-actions" data-ray-ai-actions>
+            <button type="button" data-ray-ai-clear disabled><i class="bx bx-trash"></i><span>Clear</span></button>
+            <button type="button" data-ray-ai-copy disabled><i class="bx bx-copy"></i><span>Copy</span></button>
+            <button type="button" data-ray-ai-share disabled><i class="bx bx-share-alt"></i><span>Share</span></button>
+          </div>
+          <div class="ray-ai-messages" data-ray-ai-messages aria-live="polite"></div>
+          <div class="ray-ai-prompts" data-ray-ai-prompts></div>
+          <form class="ray-ai-form" data-ray-ai-form>
+            <label class="sr-only" for="ray-ai-page-input">Ask Ray AI</label>
+            <input id="ray-ai-page-input" data-ray-ai-input type="text" placeholder="Enter a prompt here" autocomplete="off" />
+            <span class="ray-ai-count" data-ray-ai-count>0/500</span>
+            <button class="ray-ai-voice" type="button" data-ray-ai-voice aria-label="Voice prompt"><i class="bx bx-microphone"></i></button>
+            <button type="submit" aria-label="Ask Ray AI"><i class="bx bx-send"></i></button>
+          </form>
+          <p class="ray-ai-status" data-ray-ai-status aria-live="polite">Tap the prompt field to type.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-title">Ray Mhlongo</p>
+    <div class="footer-social">
+      <a href="https://www.linkedin.com/in/raymhlongo" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="bx bxl-linkedin"></i></a>
+      <a href="https://github.com/Ray-Mhlongo" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="bx bxl-github"></i></a>
+      <a href="https://wa.me/27600000000" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="bx bxl-whatsapp"></i></a>
+    </div>
+    <p>&#169; <span id="year"></span> Ray Mhlongo</p>
+  </footer>
+
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <script src="portfolioData.js?v=1"></script>
+  <script src="projectsData.js?v=1"></script>
+  <script src="productsData.js?v=1"></script>
+  <script src="skillsData.js?v=1"></script>
+  <script src="certificationsData.js?v=1"></script>
+  <script src="experienceData.js?v=1"></script>
+  <script src="educationData.js?v=1"></script>
+  <script src="servicesData.js?v=1"></script>
+  <script src="contactData.js?v=1"></script>
+  <script src="aiContextBuilder.js?v=1"></script>
+  <script src="ray-ai-config.js?v=6"></script>
+  <script src="script.js?v=13"></script>
+</body>
+</html>

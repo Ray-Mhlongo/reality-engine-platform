@@ -1,0 +1,10 @@
+metric,value,note
+Total packet rows,394136,Rows in the provided Wireshark CSV export
+TCP packets,314873,Main protocol by volume
+TLSv1.3 packets,71625,Encrypted session traffic
+ICMP packets,2690,Connectivity and ping style checks
+DNS packets,1999,Name lookup traffic
+Average packet length,985.58,Average Length field from Midterm_53_group.csv
+Largest packet length,49745,Maximum Length field from Midterm_53_group.csv
+Top source host,192.167.7.162,116067 packets
+Top destination host,192.167.7.162,276849 packets

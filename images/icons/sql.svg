@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SQL database icon">
+  <ellipse cx="32" cy="13" rx="21" ry="8" fill="#4479a1"/>
+  <path d="M11 13v30c0 4.4 9.4 8 21 8s21-3.6 21-8V13" fill="#5f95bd"/>
+  <ellipse cx="32" cy="43" rx="21" ry="8" fill="#4479a1"/>
+  <path d="M11 23c0 4.4 9.4 8 21 8s21-3.6 21-8" fill="none" stroke="#d9ecf7" stroke-width="3"/>
+  <path d="M11 33c0 4.4 9.4 8 21 8s21-3.6 21-8" fill="none" stroke="#d9ecf7" stroke-width="3"/>
+  <text x="32" y="47" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#fff">SQL</text>
+</svg>

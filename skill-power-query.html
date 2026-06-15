@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Power Query skill showcase by Ray Mhlongo." />
+  <title>Power Query Skill | Ray Mhlongo</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=13" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="l-header"><nav class="nav bd-grid"><div><a href="index.html" class="nav-logo">Ray Mhlongo</a></div><div class="nav-menu" id="nav-menu">        <ul class="nav-list">
+          <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="projects.html" class="nav-link">Projects</a></li>
+          <li class="nav-item"><a href="products.html" class="nav-link">Products</a></li>
+          <li class="nav-item"><a href="reality-engine.html" class="nav-link">Reality Engine</a></li>
+          <li class="nav-item nav-dropdown">
+            <button class="nav-link nav-dropdown-toggle active" type="button" aria-expanded="false">
+              Skills <i class="bx bx-chevron-down" aria-hidden="true"></i>
+            </button>
+            <ul class="nav-dropdown-menu" aria-label="Skills list">
+              <li><a href="skill-sql.html" class="nav-dropdown-link">SQL</a></li>
+              <li><a href="skill-postgres.html" class="nav-dropdown-link">PostgreSQL</a></li>
+              <li><a href="skill-power-query.html" class="nav-dropdown-link active">Power Query</a></li>
+              <li><a href="skill-excel.html" class="nav-dropdown-link">Excel</a></li>
+              <li><a href="skill-python.html" class="nav-dropdown-link">Python</a></li>
+              <li><a href="skill-networking.html" class="nav-dropdown-link">Networking</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a href="ray-ai.html" class="nav-link">Ray AI</a></li>
+          <li class="nav-item"><a href="why-hire-me.html" class="nav-link">Why Hire Me</a></li>
+          <li class="nav-item"><a href="contact.html" class="nav-link">Contact</a></li>
+        </ul></div><div class="nav-toggle" id="nav-toggle"><i class="bx bx-menu"></i></div></nav></header>
+
+  <main id="main-content" class="l-main">
+    <section class="section skill-page">
+      <div class="skill-hero bd-grid">
+        <div>
+          <p class="project-meta">Transformation and data quality stage</p>
+          <h1>Power Query</h1>
+          <div class="skill-overview">
+            <p>I used Power Query as the data transformation stage of this project. It allowed me to take raw CSV exports from the SQL database and prepare them for analysis in Excel. This included structuring data ensuring consistency and making sure all tables were ready for reporting.</p>
+            <p>I also used Power Query to apply transformations that standardise column types and ensure data quality across all datasets. This made it easier to work with the data in Excel without manual cleaning. It represents an important step in making the dataset reliable for analysis.</p>
+            <p>Power Query acts as the bridge between raw database output and analytical reporting. It ensures that all data used in Excel is structured consistent and ready for insight generation.</p>
+          </div>
+          <a href="index.html" class="button">Back Home</a>
+        </div>
+        <div class="project-visual">Clean<br>Transform<br>Load</div>
+      </div>
+    </section>
+
+    <section class="section pipeline-section">
+      <h2 class="section-title">Project Pipeline</h2>
+      <div class="pipeline-strip bd-grid" aria-label="Connected data analytics project pipeline">
+        <a class="pipeline-step" href="skill-sql.html">SQL</a>
+        <a class="pipeline-step" href="skill-postgres.html">PostgreSQL</a>
+        <a class="pipeline-step active" href="skill-power-query.html">Power Query</a>
+        <a class="pipeline-step" href="skill-excel.html">Excel</a>
+        <a class="pipeline-step" href="skill-python.html">Python</a>
+        <a class="pipeline-step" href="skill-networking.html">Networking</a>
+      </div>
+    </section>
+
+    <section class="section skill-video-section" aria-labelledby="video-title">
+      <h2 class="section-title" id="video-title">Skill Demonstration</h2>
+      <div class="skill-video-shell bd-grid">
+        <div class="skill-video-actions">
+          <button class="skill-video-trigger active" type="button" data-video-target="pq-screenshots">Power Query data type standardization screenshots</button>
+        </div>
+        <article class="skill-video-panel active" id="pq-screenshots">
+          <h3>Power Query: Data Type Standardization</h3>
+          <div class="power-query-shot-grid">
+            <figure>
+              <figcaption>dim packages, data type standardization</figcaption>
+              <img src="images/power-query/dim-packages-data-type-standardisation.png" alt="Power Query data type standardization for dim_packages table" />
+            </figure>
+            <figure>
+              <figcaption>dim customers, data type standardization</figcaption>
+              <img src="images/power-query/dim-customers-data-type-standardisation.png" alt="Power Query data type standardization for dim_customers table" />
+            </figure>
+            <figure>
+              <figcaption>fact subscriptions, data type standardization</figcaption>
+              <img src="images/power-query/fact-subscriptions-data-type-standardisation.png" alt="Power Query data type standardization for fact_subscriptions table" />
+            </figure>
+            <figure>
+              <figcaption>fact tickets, data type standardization</figcaption>
+              <img src="images/power-query/fact-tickets-data-type-standardisation.png" alt="Power Query data type standardization for fact_tickets table" />
+            </figure>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><p class="footer-title">Ray Mhlongo</p><p>&#169; <span id="year"></span> Ray Mhlongo</p></footer>
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <script src="portfolioData.js?v=1"></script>
+  <script src="projectsData.js?v=1"></script>
+  <script src="productsData.js?v=1"></script>
+  <script src="skillsData.js?v=1"></script>
+  <script src="certificationsData.js?v=1"></script>
+  <script src="experienceData.js?v=1"></script>
+  <script src="educationData.js?v=1"></script>
+  <script src="servicesData.js?v=1"></script>
+  <script src="contactData.js?v=1"></script>
+  <script src="aiContextBuilder.js?v=1"></script>
+  <script src="script.js?v=13"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Microsoft Power BI icon">
+  <rect x="12" y="28" width="9" height="24" rx="4.5" fill="#f2c811"/>
+  <rect x="26" y="18" width="9" height="34" rx="4.5" fill="#f6d84b"/>
+  <rect x="40" y="10" width="9" height="42" rx="4.5" fill="#d9a300"/>
+  <path d="M15 52h35" stroke="#8a6a00" stroke-width="4" stroke-linecap="round"/>
+</svg>

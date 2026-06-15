@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Contact Ray Mhlongo for data analyst opportunities." />
+  <title>Contact | Ray Mhlongo</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=13" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="l-header">
+    <nav class="nav bd-grid">
+      <div><a href="index.html" class="nav-logo">Ray Mhlongo</a></div>
+      <div class="nav-menu" id="nav-menu">
+                <ul class="nav-list">
+          <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="projects.html" class="nav-link">Projects</a></li>
+          <li class="nav-item"><a href="products.html" class="nav-link">Products</a></li>
+          <li class="nav-item"><a href="reality-engine.html" class="nav-link">Reality Engine</a></li>
+          <li class="nav-item nav-dropdown">
+            <button class="nav-link nav-dropdown-toggle" type="button" aria-expanded="false">
+              Skills <i class="bx bx-chevron-down" aria-hidden="true"></i>
+            </button>
+            <ul class="nav-dropdown-menu" aria-label="Skills list">
+              <li><a href="skill-sql.html" class="nav-dropdown-link">SQL</a></li>
+              <li><a href="skill-postgres.html" class="nav-dropdown-link">PostgreSQL</a></li>
+              <li><a href="skill-power-query.html" class="nav-dropdown-link">Power Query</a></li>
+              <li><a href="skill-excel.html" class="nav-dropdown-link">Excel</a></li>
+              <li><a href="skill-python.html" class="nav-dropdown-link">Python</a></li>
+              <li><a href="skill-networking.html" class="nav-dropdown-link">Networking</a></li>
+            </ul>
+          </li>
+          <li class="nav-item"><a href="ray-ai.html" class="nav-link">Ray AI</a></li>
+          <li class="nav-item"><a href="why-hire-me.html" class="nav-link">Why Hire Me</a></li>
+          <li class="nav-item"><a href="contact.html" class="nav-link active">Contact</a></li>
+        </ul>
+      </div>
+      <div class="nav-toggle" id="nav-toggle"><i class="bx bx-menu"></i></div>
+    </nav>
+  </header>
+
+  <main id="main-content" class="l-main">
+    <section class="contact section">
+      <h2 class="section-title">Contact</h2>
+
+      <div class="contact-links bd-grid">
+        <article class="contact-card">
+          <h3>Email</h3>
+          <a href="mailto:rodgersmhlongo@gmail.com"><i class="bx bx-envelope"></i> rodgersmhlongo@gmail.com</a>
+        </article>
+        <article class="contact-card">
+          <h3>LinkedIn</h3>
+          <a href="https://www.linkedin.com/in/raymhlongo" target="_blank" rel="noopener noreferrer"><i class="bx bxl-linkedin"></i> linkedin.com/in/raymhlongo</a>
+        </article>
+        <article class="contact-card">
+          <h3>GitHub</h3>
+          <a href="https://github.com/Ray-Mhlongo" target="_blank" rel="noopener noreferrer"><i class="bx bxl-github"></i> github.com/Ray Mhlongo</a>
+        </article>
+        <article class="contact-card">
+          <h3>WhatsApp</h3>
+          <a href="https://wa.me/27768488657" target="_blank" rel="noopener noreferrer"><i class="bx bxl-whatsapp"></i> Message on WhatsApp</a>
+        </article>
+      </div>
+
+      <div class="contact-container bd-grid">
+        <form id="contact-form" class="contact-form">
+          <input id="name" name="from_name" type="text" placeholder="Name" class="contact-input" autocomplete="name" required />
+          <input id="email" name="from_email" type="email" placeholder="Email" class="contact-input" autocomplete="email" required />
+          <textarea id="message" name="message" rows="8" placeholder="Message" class="contact-input" required></textarea>
+          <button class="contact-button button" type="submit">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="footer-title">Ray Mhlongo</p>
+    <div class="footer-social">
+      <a href="https://www.linkedin.com/in/raymhlongo" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="bx bxl-linkedin"></i></a>
+      <a href="https://github.com/Ray-Mhlongo" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="bx bxl-github"></i></a>
+      <a href="https://wa.me/27600000000" class="footer-icon" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="bx bxl-whatsapp"></i></a>
+    </div>
+    <p>&#169; <span id="year"></span> Ray Mhlongo</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    if (window.emailjs) {
+      emailjs.init("kPArux2pCAK50eRHu");
+      const form = document.getElementById("contact-form");
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        emailjs.sendForm("service_w985lsf", "template_p9upgp8", this)
+          .then(() => alert("Message sent."), (error) => alert("Failed to send: " + error.text));
+      });
+    }
+  </script>
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <script src="portfolioData.js?v=1"></script>
+  <script src="projectsData.js?v=1"></script>
+  <script src="productsData.js?v=1"></script>
+  <script src="skillsData.js?v=1"></script>
+  <script src="certificationsData.js?v=1"></script>
+  <script src="experienceData.js?v=1"></script>
+  <script src="educationData.js?v=1"></script>
+  <script src="servicesData.js?v=1"></script>
+  <script src="contactData.js?v=1"></script>
+  <script src="aiContextBuilder.js?v=1"></script>
+  <script src="script.js?v=13"></script>
+</body>
+</html>

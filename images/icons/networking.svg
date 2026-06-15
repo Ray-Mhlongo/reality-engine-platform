@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Networking icon">
+  <rect x="8" y="26" width="18" height="14" rx="3" fill="#1ba0d7"/>
+  <rect x="38" y="8" width="18" height="14" rx="3" fill="#1ba0d7"/>
+  <rect x="38" y="42" width="18" height="14" rx="3" fill="#1ba0d7"/>
+  <circle cx="32" cy="32" r="5" fill="#0e2431"/>
+  <path d="M26 33h6M36 29l7-8M36 35l7 8" fill="none" stroke="#0e2431" stroke-width="3" stroke-linecap="round"/>
+  <path d="M12 33h10M42 15h10M42 49h10" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+</svg>
