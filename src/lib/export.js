@@ -1,4 +1,4 @@
-import { formatNumber, titleCase } from "./format";
+import { formatNumber, titleCase } from "./format.js";
 
 export function downloadCsv(filename, rows) {
   const safeRows = rows.length ? rows : [{ Message: "No records available" }];
@@ -46,6 +46,27 @@ export function buildInsightsExportRows(analysis) {
       Title: item.title,
       Detail: item.detail,
       Priority: item.severity
+    })),
+    ...analysis.seniorAnalyst.executiveSummary.map((item) => ({
+      Section: "Senior Data Analyst",
+      Type: "Executive Summary",
+      Title: "Evidence based summary",
+      Detail: item,
+      Priority: "Board"
+    })),
+    ...analysis.seniorAnalyst.recommendedNextActions.map((item) => ({
+      Section: "Senior Data Analyst",
+      Type: "Recommended Action",
+      Title: "Next action",
+      Detail: item,
+      Priority: "High"
+    })),
+    ...analysis.dataTeam.map((item) => ({
+      Section: "Data Team Intelligence",
+      Type: item.persona,
+      Title: item.observation,
+      Detail: `${item.evidence} Recommended action: ${item.recommendedAction}`,
+      Priority: `${item.confidenceLevel}% confidence`
     }))
   ];
 }

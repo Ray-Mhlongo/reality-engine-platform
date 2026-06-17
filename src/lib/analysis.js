@@ -22,6 +22,12 @@ export function analyzeDataset(dataset) {
   const forecasts = generateForecasts(rows, numericColumns, dateColumns);
   const earlyWarnings = generateEarlyWarnings({ qualityScore, duplicateCount, rows, trends, anomalies, numericColumns, categoryPerformance });
   const opportunities = scanOpportunities({ trends, correlations, categoryPerformance, numericColumns, rows });
+  const semanticColumns = inferSemanticColumns(columnProfiles);
+  const kpis = detectBusinessKpis({ rows, numericColumns, categoricalColumns, semanticColumns });
+  const periodComparison = comparePeriods({ rows, numericColumns, dateColumns, semanticColumns });
+  const concentration = detectConcentration({ rows, categoricalColumns, numericColumns, semanticColumns });
+  const varianceAnalysis = buildVarianceAnalysis({ trends, periodComparison, kpis });
+  const limitations = buildAnalysisLimitations({ rows, numericColumns, categoricalColumns, dateColumns, semanticColumns, forecasts });
   const discoveryFeed = buildDiscoveryFeed({
     trends,
     correlations,
@@ -49,10 +55,53 @@ export function analyzeDataset(dataset) {
     forecasts,
     earlyWarnings,
     opportunities,
+    semanticColumns,
+    kpis,
+    periodComparison,
+    concentration,
+    varianceAnalysis,
+    limitations,
+    seniorAnalyst: generateSeniorAnalystMode({
+      metadata,
+      qualityScore,
+      scoreBreakdown,
+      duplicateCount,
+      outliers,
+      trends,
+      correlations,
+      categoryPerformance,
+      anomalies,
+      earlyWarnings,
+      opportunities,
+      forecasts,
+      semanticColumns,
+      kpis,
+      periodComparison,
+      concentration,
+      varianceAnalysis,
+      limitations
+    }),
+    dataTeam: generateDataTeamIntelligence({
+      qualityScore,
+      scoreBreakdown,
+      duplicateCount,
+      trends,
+      correlations,
+      categoryPerformance,
+      anomalies,
+      earlyWarnings,
+      opportunities,
+      forecasts,
+      semanticColumns,
+      kpis,
+      periodComparison,
+      concentration,
+      limitations
+    }),
     dateRange,
     categorySummaries,
     scoreBreakdown,
-    investigation: generateInvestigation({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings }),
+    investigation: generateInvestigation({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings, semanticColumns, kpis, periodComparison, concentration }),
     boardroom: generateBoardroom({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings }),
     qualityScore,
     discoveryFeed,
@@ -67,7 +116,13 @@ export function analyzeDataset(dataset) {
       categoryPerformance,
       anomalies,
       duplicateCount,
-      outliers
+      outliers,
+      semanticColumns,
+      kpis,
+      periodComparison,
+      concentration,
+      varianceAnalysis,
+      limitations
     })
   };
 }
@@ -232,6 +287,215 @@ function detectAnomalies(rows, numericColumns, outliers) {
   return [...outlierAnomalies, ...volatility].slice(0, 10);
 }
 
+function inferSemanticColumns(columnProfiles) {
+  const semantics = {};
+  const patterns = {
+    date: /date|day|week|month|period|created|closed|order.?time/i,
+    revenue: /revenue|sales|income|turnover|amount|booking|value|total/i,
+    cost: /cost|expense|spend|cogs|loss|fee/i,
+    profit: /profit|margin|ebit|net/i,
+    margin: /margin|profit.?rate|gross.?margin/i,
+    quantity: /quantity|qty|units|volume|count/i,
+    customer: /customer|client|account|buyer|member|user/i,
+    product: /product|sku|item|service|plan|package/i,
+    region: /region|province|state|country|city|territory|market/i,
+    branch: /branch|store|location|site|office/i,
+    channel: /channel|source|medium|partner|segment/i,
+    category: /category|type|class|group|department/i,
+    supplier: /supplier|vendor|manufacturer|provider/i,
+    inventory: /inventory|stock|on.?hand|available|shortage/i,
+    churn: /churn|cancel|attrition|retention|lost/i,
+    status: /status|stage|state|outcome/i,
+    payment: /payment|paid|invoice|balance|collection/i,
+    expense: /expense|spend|opex|cost/i
+  };
+
+  Object.entries(patterns).forEach(([meaning, pattern]) => {
+    semantics[meaning] = columnProfiles.filter((profile) => pattern.test(profile.name));
+  });
+
+  return semantics;
+}
+
+function detectBusinessKpis({ rows, numericColumns, semanticColumns }) {
+  const primaryRevenue = semanticColumns.revenue?.find((profile) => profile.type === "number") || chooseMeasure(numericColumns);
+  const cost = semanticColumns.cost?.find((profile) => profile.type === "number") || semanticColumns.expense?.find((profile) => profile.type === "number");
+  const profit = semanticColumns.profit?.find((profile) => profile.type === "number");
+  const churn = semanticColumns.churn?.find((profile) => profile.type === "number");
+  const quantity = semanticColumns.quantity?.find((profile) => profile.type === "number");
+  const customerColumn = semanticColumns.customer?.find((profile) => profile.type !== "number");
+  const customerCount = customerColumn ? new Set(rows.map((row) => String(row[customerColumn.name] || "").trim()).filter(Boolean)).size : 0;
+
+  const kpis = [];
+  if (primaryRevenue) {
+    kpis.push({
+      key: "revenue",
+      label: titleCase(primaryRevenue.name),
+      value: primaryRevenue.sum,
+      evidence: `${titleCase(primaryRevenue.name)} totals ${formatNumber(primaryRevenue.sum, { compact: true })} across ${formatNumber(rows.length)} rows.`,
+      column: primaryRevenue.name
+    });
+  }
+  if (cost) {
+    kpis.push({
+      key: "cost",
+      label: titleCase(cost.name),
+      value: cost.sum,
+      evidence: `${titleCase(cost.name)} totals ${formatNumber(cost.sum, { compact: true })}; cost intensity is ${primaryRevenue ? formatPercent((cost.sum / Math.max(primaryRevenue.sum, 1)) * 100) : "not comparable without revenue"}.`,
+      column: cost.name
+    });
+  }
+  if (profit || (primaryRevenue && cost)) {
+    const profitValue = profit ? profit.sum : primaryRevenue.sum - cost.sum;
+    const margin = primaryRevenue ? (profitValue / Math.max(primaryRevenue.sum, 1)) * 100 : 0;
+    kpis.push({
+      key: "profitability",
+      label: profit ? titleCase(profit.name) : "Estimated Profit",
+      value: profitValue,
+      evidence: `Profitability signal is ${formatNumber(profitValue, { compact: true })} with estimated margin of ${formatPercent(margin)}.`,
+      column: profit?.name || primaryRevenue?.name
+    });
+  }
+  if (churn) {
+    kpis.push({
+      key: "churn",
+      label: titleCase(churn.name),
+      value: churn.mean,
+      evidence: `${titleCase(churn.name)} averages ${formatNumber(churn.mean)} with a high point of ${formatNumber(churn.max)}.`,
+      column: churn.name
+    });
+  }
+  if (quantity) {
+    kpis.push({
+      key: "volume",
+      label: titleCase(quantity.name),
+      value: quantity.sum,
+      evidence: `${titleCase(quantity.name)} totals ${formatNumber(quantity.sum, { compact: true })}, giving the analysis a volume signal.`,
+      column: quantity.name
+    });
+  }
+  if (customerCount) {
+    kpis.push({
+      key: "customers",
+      label: titleCase(customerColumn.name),
+      value: customerCount,
+      evidence: `${formatNumber(customerCount)} unique ${titleCase(customerColumn.name)} values were detected.`,
+      column: customerColumn.name
+    });
+  }
+  return kpis;
+}
+
+function comparePeriods({ rows, numericColumns, dateColumns, semanticColumns }) {
+  const measure = semanticColumns.revenue?.find((profile) => profile.type === "number") || chooseMeasure(numericColumns);
+  const dateColumn = dateColumns[0]?.name;
+  if (!measure || !dateColumn) return null;
+  const points = rows
+    .map((row) => ({ date: toDate(row[dateColumn]), value: toNumber(row[measure.name]) }))
+    .filter((point) => point.date && Number.isFinite(point.value))
+    .sort((a, b) => a.date - b.date);
+  if (points.length < 4) return null;
+
+  const midpoint = Math.floor(points.length / 2);
+  const first = points.slice(0, midpoint);
+  const second = points.slice(midpoint);
+  const firstTotal = sum(first.map((point) => point.value));
+  const secondTotal = sum(second.map((point) => point.value));
+  const delta = secondTotal - firstTotal;
+  const change = firstTotal ? (delta / Math.abs(firstTotal)) * 100 : 0;
+  return {
+    measure: measure.name,
+    dateColumn,
+    firstTotal,
+    secondTotal,
+    delta,
+    change,
+    direction: change >= 0 ? "increase" : "decline",
+    evidence: `${titleCase(measure.name)} ${change >= 0 ? "increased" : "declined"} by ${formatPercent(Math.abs(change))} from the first half (${formatNumber(firstTotal, { compact: true })}) to the second half (${formatNumber(secondTotal, { compact: true })}).`
+  };
+}
+
+function detectConcentration({ rows, categoricalColumns, numericColumns, semanticColumns }) {
+  const measure = semanticColumns.revenue?.find((profile) => profile.type === "number") || chooseMeasure(numericColumns);
+  if (!measure) return [];
+  const preferred = [
+    ...(semanticColumns.customer || []),
+    ...(semanticColumns.product || []),
+    ...(semanticColumns.region || []),
+    ...(semanticColumns.channel || []),
+    ...(semanticColumns.category || [])
+  ];
+  const candidates = uniqueProfiles([...preferred, ...categoricalColumns]).slice(0, 6);
+  return candidates
+    .map((category) => {
+      const groups = new Map();
+      rows.forEach((row) => {
+        const key = String(row[category.name] || "Unknown").trim() || "Unknown";
+        const value = toNumber(row[measure.name]);
+        if (!Number.isFinite(value)) return;
+        groups.set(key, (groups.get(key) || 0) + value);
+      });
+      const ranked = [...groups.entries()].map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+      const total = sum(ranked.map((item) => item.total));
+      const top = ranked[0];
+      if (!top || !total) return null;
+      return {
+        category: category.name,
+        measure: measure.name,
+        top,
+        share: (top.total / Math.abs(total)) * 100,
+        ranked: ranked.slice(0, 5),
+        evidence: `${top.name} contributes ${formatPercent((top.total / Math.abs(total)) * 100)} of ${titleCase(measure.name)} within ${titleCase(category.name)}.`
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.share - a.share);
+}
+
+function buildVarianceAnalysis({ trends, periodComparison, kpis }) {
+  const items = [];
+  if (periodComparison) {
+    items.push({
+      title: `${titleCase(periodComparison.measure)} period variance`,
+      evidence: periodComparison.evidence,
+      severity: Math.abs(periodComparison.change) > 20 ? "High" : "Medium"
+    });
+  }
+  trends.slice(0, 3).forEach((trend) => {
+    items.push({
+      title: `${titleCase(trend.column)} ${trend.direction} trend`,
+      evidence: `${titleCase(trend.column)} moved ${trend.direction} by ${formatPercent(Math.abs(trend.change))} between early and late records.`,
+      severity: Math.abs(trend.change) > 20 ? "High" : "Medium"
+    });
+  });
+  const profit = kpis.find((kpi) => kpi.key === "profitability");
+  if (profit) {
+    items.push({ title: "Profitability variance lens", evidence: profit.evidence, severity: profit.value < 0 ? "High" : "Low" });
+  }
+  return items.slice(0, 6);
+}
+
+function buildAnalysisLimitations({ rows, numericColumns, categoricalColumns, dateColumns, semanticColumns, forecasts }) {
+  const limitations = [];
+  if (!rows.length) limitations.push("No usable rows were found, so no business analysis can be generated.");
+  if (!numericColumns.length) limitations.push("No numeric columns found, so KPI, driver, forecast, and simulation analysis is limited.");
+  if (!categoricalColumns.length) limitations.push("No categorical columns found, so segment, concentration, and top/bottom performer analysis is limited.");
+  if (!dateColumns.length) limitations.push("No date column detected, so month-over-month and forecasting analysis cannot be trusted.");
+  if (!forecasts.length) limitations.push("Forecast unavailable because the dataset needs at least five dated numeric observations.");
+  if (!semanticColumns.revenue?.length) limitations.push("No clear revenue or sales column detected; naming a numeric field Revenue or Sales would improve business interpretation.");
+  if (!semanticColumns.cost?.length && !semanticColumns.expense?.length) limitations.push("No clear cost or expense column detected; margin and profitability analysis may be incomplete.");
+  return limitations;
+}
+
+function uniqueProfiles(profiles) {
+  const seen = new Set();
+  return profiles.filter((profile) => {
+    if (!profile || seen.has(profile.name)) return false;
+    seen.add(profile.name);
+    return true;
+  });
+}
+
 function buildDiscoveryFeed(context) {
   const feed = [];
   if (context.qualityScore < 75) {
@@ -286,6 +550,111 @@ function buildDiscoveryFeed(context) {
   return feed.slice(0, 9);
 }
 
+function generateSeniorAnalystMode(context) {
+  const topKpi = context.kpis[0];
+  const topTrend = context.trends[0];
+  const topSegment = context.categoryPerformance[0];
+  const topCorrelation = context.correlations[0];
+  const topConcentration = context.concentration[0];
+  const topOpportunity = context.opportunities[0];
+  const topWarning = context.earlyWarnings[0];
+  const topAnomaly = context.anomalies[0];
+
+  return {
+    executiveSummary: [
+      `Reviewed ${formatNumber(context.metadata.rowCount)} rows and ${formatNumber(context.metadata.columnCount)} columns with a ${formatPercent(context.qualityScore)} quality score.`,
+      context.periodComparison ? context.periodComparison.evidence : "No reliable dated period comparison could be produced from the current columns.",
+      topKpi ? topKpi.evidence : "No strong business KPI column was detected from the current headers."
+    ],
+    businessContext: topSegment
+      ? `This dataset behaves like a performance dataset: ${titleCase(topSegment.categoryColumn)} segments can be ranked by ${titleCase(topSegment.valueColumn)}.`
+      : "The dataset can be profiled structurally, but it needs clearer business dimensions and measures for deeper operating context.",
+    kpiDetection: context.kpis.length
+      ? context.kpis.map((kpi) => `${kpi.label}: ${kpi.evidence}`)
+      : ["No KPI-like numeric fields were detected. Add Revenue, Cost, Profit, Quantity, Customer, Product, Region, or Channel fields to improve interpretation."],
+    trendAnalysis: topTrend
+      ? `${titleCase(topTrend.column)} is the strongest trend, moving ${topTrend.direction} by ${formatPercent(Math.abs(topTrend.change))}.`
+      : "Trend analysis is unavailable because a reliable date and numeric measure combination was not detected.",
+    varianceAnalysis: context.varianceAnalysis.length ? context.varianceAnalysis.map((item) => item.evidence) : ["No material variance signal could be calculated."],
+    segmentAnalysis: topSegment
+      ? `${topSegment.best.name} is the top ${titleCase(topSegment.categoryColumn)} by ${titleCase(topSegment.valueColumn)} at ${formatNumber(topSegment.best.total, { compact: true })}; ${topSegment.weakest.name} is weakest at ${formatNumber(topSegment.weakest.total, { compact: true })}.`
+      : "Segment analysis needs at least one category column and one numeric measure.",
+    driverAnalysis: topCorrelation
+      ? `${titleCase(topCorrelation.a)} and ${titleCase(topCorrelation.b)} have a ${topCorrelation.strength} correlation of ${topCorrelation.score.toFixed(2)}. Treat this as a driver hypothesis, not causality.`
+      : "No strong numeric driver relationship was detected.",
+    outlierInvestigation: topAnomaly ? `${topAnomaly.title}. ${topAnomaly.detail}` : "No severe outlier cluster was detected.",
+    rootCauseHypotheses: buildRootCauseHypotheses({ topTrend, topSegment, topCorrelation, topConcentration, topWarning }),
+    dataQualityConcerns: [
+      `Completeness is ${formatPercent(context.scoreBreakdown.completenessScore)}, consistency is ${formatPercent(context.scoreBreakdown.consistencyScore)}, and duplicate count is ${formatNumber(context.duplicateCount)}.`,
+      context.outliers.length ? `${formatNumber(context.outliers.length)} numeric outlier values may distort averages and forecasts.` : "Outlier pressure is limited by the current profiling rules."
+    ],
+    riskAssessment: topWarning ? `${topWarning.title}: ${topWarning.detail}` : "No critical risk alert was detected, but forecast and data-quality limitations still need review.",
+    opportunityAssessment: topOpportunity ? `${topOpportunity.title}: ${topOpportunity.detail}` : "No high-confidence opportunity cluster was detected from the current fields.",
+    recommendedNextActions: [
+      topWarning ? `Address ${topWarning.title.toLowerCase()} because it is the highest severity warning.` : "Keep monitoring quality, trend, and anomaly signals before decisions are automated.",
+      topSegment ? `Investigate why ${topSegment.best.name} outperforms ${topSegment.weakest.name}; this is the clearest segment playbook.` : "Add business dimensions such as Product, Region, Channel, Customer, or Category.",
+      context.limitations[0] || "Convert the strongest signal into a tracked KPI and rerun the analysis after the next data refresh."
+    ],
+    leadershipQuestions: [
+      topSegment ? `What operating conditions make ${topSegment.best.name} outperform ${topSegment.weakest.name}?` : "Which business dimension should leadership use to compare performance?",
+      topCorrelation ? `Is there an operational reason ${titleCase(topCorrelation.a)} and ${titleCase(topCorrelation.b)} move together?` : "Which controllable inputs should be added to explain performance?",
+      context.periodComparison ? `What changed between the first and second half of the dataset?` : "Can the source system provide reliable dates for period analysis?"
+    ]
+  };
+}
+
+function buildRootCauseHypotheses({ topTrend, topSegment, topCorrelation, topConcentration, topWarning }) {
+  const hypotheses = [];
+  if (topTrend) hypotheses.push(`${titleCase(topTrend.column)} movement may be linked to period mix, demand changes, or operational execution because the late period changed by ${formatPercent(Math.abs(topTrend.change))}.`);
+  if (topSegment) hypotheses.push(`${topSegment.best.name} may have a repeatable advantage because it contributes ${formatNumber(topSegment.best.total, { compact: true })} in ${titleCase(topSegment.valueColumn)}.`);
+  if (topCorrelation) hypotheses.push(`${titleCase(topCorrelation.a)} may be a driver or proxy for ${titleCase(topCorrelation.b)} because the correlation is ${topCorrelation.score.toFixed(2)}.`);
+  if (topConcentration && topConcentration.share > 45) hypotheses.push(`Concentration risk may be present because ${topConcentration.top.name} contributes ${formatPercent(topConcentration.share)} of ${titleCase(topConcentration.measure)}.`);
+  if (topWarning) hypotheses.push(`${topWarning.title} could escalate if the underlying signal is not monitored.`);
+  return hypotheses.length ? hypotheses : ["Root cause analysis needs clearer dates, measures, and business dimensions before stronger hypotheses can be defended."];
+}
+
+function generateDataTeamIntelligence(context) {
+  const topTrend = context.trends[0];
+  const topSegment = context.categoryPerformance[0];
+  const topCorrelation = context.correlations[0];
+  const topWarning = context.earlyWarnings[0];
+  const topOpportunity = context.opportunities[0];
+  const topForecast = context.forecasts[0];
+  const topConcentration = context.concentration[0];
+  const revenue = context.kpis.find((kpi) => kpi.key === "revenue");
+  const cost = context.kpis.find((kpi) => kpi.key === "cost");
+  const profit = context.kpis.find((kpi) => kpi.key === "profitability");
+
+  return [
+    roleInsight("Senior Data Analyst", "Finds trends, anomalies, patterns, drivers, and decision points.", topTrend ? `${titleCase(topTrend.column)} is moving ${topTrend.direction}.` : "No reliable trend was detected.", topTrend ? `${titleCase(topTrend.column)} changed by ${formatPercent(Math.abs(topTrend.change))}.` : context.limitations[0], topWarning?.title || "Opportunity to deepen exploratory analysis.", topTrend ? "Validate the period movement against segment and anomaly rows." : "Add reliable date and numeric fields.", confidence(context)),
+    roleInsight("BI Analyst", "Focuses on dashboards, KPIs, reporting logic, metric definitions, and executive visibility.", revenue ? `${revenue.label} should be treated as the primary executive KPI.` : "No obvious executive KPI was detected.", revenue?.evidence || "The current headers do not clearly identify revenue or sales.", revenue ? "Opportunity to formalize metric definitions." : "Reporting visibility risk.", revenue ? "Create KPI definitions for revenue, cost, margin, quality, and risk." : "Rename or map the primary business measure.", confidence(context) - 4),
+    roleInsight("Business Analyst", "Focuses on processes, requirements, stakeholder impact, business rules, and operational decisions.", topSegment ? `${titleCase(topSegment.categoryColumn)} drives stakeholder comparison.` : "Business process dimensions are limited.", topSegment ? `${topSegment.best.name} leads while ${topSegment.weakest.name} lags.` : "No category and measure pair was strong enough for process comparison.", "Decision rules may be unclear without stronger dimensions.", "Ask stakeholders which categories represent teams, products, customers, or workflows.", confidence(context) - 6),
+    roleInsight("Data Engineer", "Focuses on data pipelines, schema issues, source reliability, transformation logic, lineage, and scalability.", `The dataset has ${formatNumber(context.duplicateCount)} duplicate rows and completeness of ${formatPercent(context.scoreBreakdown.completenessScore)}.`, `Quality score is ${formatPercent(context.qualityScore)} across the uploaded schema.`, context.duplicateCount ? "Pipeline deduplication risk." : "Source reliability looks acceptable for MVP analysis.", "Persist schema metadata, row counts, duplicate checks, and source lineage on ingestion.", Math.max(45, confidence(context) - 8)),
+    roleInsight("Analytics Engineer", "Focuses on data models, fact tables, dimension tables, metric layers, semantic models, and reusable business logic.", `${context.kpis.length} KPI-like fields and ${context.concentration.length} concentration dimensions were inferred.`, context.kpis[0]?.evidence || "Semantic mapping found limited metric candidates.", "Metric reuse risk if definitions stay embedded in UI logic.", "Model numeric measures as facts and customer/product/region/channel fields as dimensions.", confidence(context) - 5),
+    roleInsight("Financial Analyst", "Focuses on revenue, cost, margin, profitability, variance, forecasting, and financial risk.", profit ? profit.evidence : cost ? cost.evidence : "Financial depth is limited without revenue, cost, or profit fields.", context.periodComparison?.evidence || (topForecast ? `${titleCase(topForecast.measure)} forecast risk is ${topForecast.risk}.` : "No dated financial forecast available."), topWarning?.title || "Margin and forecast uncertainty should be reviewed.", "Track revenue, cost, profit, and margin as separate measures before budget decisions.", confidence(context) - 3),
+    roleInsight("Operations Analyst", "Focuses on bottlenecks, efficiency, capacity, service levels, inventory, and process performance.", topSegment ? `${topSegment.weakest.name} is the weakest visible operating segment.` : "No operating bottleneck segment was detected.", topSegment ? `${topSegment.weakest.name} contributes ${formatNumber(topSegment.weakest.total, { compact: true })} versus ${topSegment.best.name} at ${formatNumber(topSegment.best.total, { compact: true })}.` : "Missing branch, supplier, inventory, status, or process fields.", "Operational performance may be uneven across segments.", "Investigate low-performing segments and add process status/capacity fields.", confidence(context) - 7),
+    roleInsight("Growth Analyst", "Focuses on customers, retention, expansion, channels, product performance, and market opportunity.", topOpportunity ? topOpportunity.title : topConcentration ? `${topConcentration.top.name} dominates ${titleCase(topConcentration.category)}.` : "Growth signals are limited.", topOpportunity?.detail || topConcentration?.evidence || "No customer, product, channel, or market pattern is strong enough yet.", topOpportunity ? "Growth opportunity." : "Expansion analysis risk.", "Prioritize experiments around the strongest segment and add retention/channel fields.", confidence(context) - 5),
+    roleInsight("Risk Analyst", "Focuses on anomalies, data quality risk, concentration risk, forecasting risk, and operational exposure.", topWarning ? topWarning.title : "No critical alert detected.", topWarning?.detail || (topConcentration ? topConcentration.evidence : `Risk score is ${formatPercent(context.scoreBreakdown.riskScore)}.`), topConcentration?.share > 45 ? "Concentration risk." : "Monitoring risk.", "Set thresholds for data quality, concentration, anomaly counts, and forecast volatility.", Math.max(50, confidence(context) - 2)),
+    roleInsight("Executive Consultant", "Converts findings into leadership recommendations and decision options.", topSegment ? `Leadership should decide whether to scale ${topSegment.best.name} or fix ${topSegment.weakest.name}.` : "Leadership needs better decision dimensions before choosing a playbook.", topSegment ? `${topSegment.best.name} outperforms ${topSegment.weakest.name} on ${titleCase(topSegment.valueColumn)}.` : context.limitations[0], "Strategic decision quality depends on evidence depth.", "Choose one action: protect the highest risk, scale the strongest segment, or enrich the dataset for stronger forecasts.", confidence(context))
+  ];
+}
+
+function roleInsight(persona, focus, observation, evidence, riskOrOpportunity, recommendedAction, confidenceLevel) {
+  return {
+    persona,
+    focus,
+    observation,
+    evidence: evidence || "Evidence is limited by the current uploaded dataset.",
+    riskOrOpportunity,
+    recommendedAction,
+    confidenceLevel: Math.max(35, Math.min(96, Math.round(confidenceLevel)))
+  };
+}
+
+function confidence(context) {
+  return context.qualityScore * 0.62 + Math.min(14, context.trends.length * 3) + Math.min(10, context.correlations.length * 2) + Math.min(8, context.categoryPerformance.length * 2) + (context.forecasts.length ? 4 : 0);
+}
+
 function generateIntelligence(context) {
   const strongest = context.correlations[0];
   const topTrend = context.trends[0];
@@ -295,6 +664,9 @@ function generateIntelligence(context) {
   return {
     executiveSummary: [
       `Reality Engine reviewed ${formatNumber(context.metadata.rowCount)} records across ${formatNumber(context.metadata.columnCount)} columns and generated a ${formatPercent(context.qualityScore)} data quality score.`,
+      context.periodComparison
+        ? context.periodComparison.evidence
+        : "No reliable period comparison was generated because date coverage is missing or too sparse.",
       topTrend
         ? `${titleCase(topTrend.column)} is moving ${topTrend.direction} by ${formatPercent(topTrend.change)}, making it the clearest directional signal.`
         : "No dated trend column was detected, so the engine prioritized structural patterns, category performance, and anomalies.",
@@ -303,9 +675,11 @@ function generateIntelligence(context) {
         : "No strong numeric driver relationship was detected from the current columns."
     ],
     keyFindings: [
+      context.kpis[0] ? context.kpis[0].evidence : "No clear KPI column was detected from the current headers.",
       topSegment
         ? `${topSegment.best.name} is the strongest ${titleCase(topSegment.categoryColumn)} segment by ${titleCase(topSegment.valueColumn)}.`
         : "The dataset needs at least one category and one numeric measure for performance ranking.",
+      context.concentration[0] ? context.concentration[0].evidence : "No material concentration signal was detected.",
       context.duplicateCount
         ? `${formatNumber(context.duplicateCount)} duplicate records were detected.`
         : "Duplicate risk is low in the uploaded data.",
@@ -316,16 +690,19 @@ function generateIntelligence(context) {
     risks: [
       qualityRisk ? "Decision confidence may be reduced until data gaps and duplicates are resolved." : "Data quality is acceptable for executive exploration.",
       context.anomalies.length ? "Anomalies should be reviewed before forecasting or automated action." : "No severe anomaly cluster was detected.",
+      context.limitations[0] || "The current field coverage is sufficient for first-pass decision intelligence.",
       "OpenRouter responses should be grounded against the profiling payload before being shown to users."
     ],
     opportunities: [
       topSegment ? `Replicate the conditions behind ${topSegment.best.name}'s performance in weaker segments.` : "Add business category columns to unlock performance benchmarking.",
       strongest ? `Use ${titleCase(strongest.a)} and ${titleCase(strongest.b)} as candidate features for predictive modeling.` : "Enrich the dataset with operational drivers to improve prediction strength.",
+      context.kpis.length ? `Formalize ${context.kpis.map((kpi) => kpi.label).slice(0, 3).join(", ")} as tracked decision metrics.` : "Rename key measures so the system can infer revenue, cost, profit, and customer signals.",
       "Persist metadata and profile snapshots in PostgreSQL to support historical intelligence."
     ],
     recommendedActions: [
       "Resolve missing and duplicate records before board-level reporting.",
       "Investigate the top anomaly rows and confirm whether they are valid business exceptions.",
+      context.periodComparison ? "Ask what changed between the first and second half of the dataset because period variance is measurable." : "Add reliable dates so leadership can compare periods and forecast future outcomes.",
       "Run scenario simulations on the primary value measure before committing operational changes.",
       "Connect Apps Script to PostgreSQL and OpenRouter for authenticated production workflows."
     ],
@@ -335,7 +712,7 @@ function generateIntelligence(context) {
   };
 }
 
-function generateInvestigation({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings }) {
+function generateInvestigation({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings, semanticColumns, kpis, periodComparison, concentration }) {
   const topTrend = trends[0];
   const topCorrelation = correlations[0];
   const topSegment = categoryPerformance[0];
@@ -356,9 +733,13 @@ function generateInvestigation({ qualityScore, trends, correlations, categoryPer
   return {
     mostImportantInsight: topTrend
       ? `${titleCase(topTrend.column)} is the dominant signal, moving ${topTrend.direction} by ${formatPercent(topTrend.change)} across the observed period.`
-      : topCorrelation
-        ? `${titleCase(topCorrelation.a)} and ${titleCase(topCorrelation.b)} show the strongest relationship with correlation ${topCorrelation.score.toFixed(2)}.`
-        : "The dataset is structurally clean enough for executive triage, but needs stronger time or driver fields for deeper causality.",
+      : periodComparison
+        ? periodComparison.evidence
+        : kpis[0]
+          ? kpis[0].evidence
+          : topCorrelation
+            ? `${titleCase(topCorrelation.a)} and ${titleCase(topCorrelation.b)} show the strongest relationship with correlation ${topCorrelation.score.toFixed(2)}.`
+            : "The dataset is structurally clean enough for executive triage, but needs stronger time or driver fields for deeper causality.",
     biggestRisk: topWarning
       ? `${topWarning.title}: ${topWarning.detail}`
       : qualityScore < 80
@@ -366,15 +747,19 @@ function generateInvestigation({ qualityScore, trends, correlations, categoryPer
         : "No critical business risk was detected from the current profile.",
     biggestOpportunity: topOpportunity
       ? `${topOpportunity.title}: ${topOpportunity.detail}`
-      : topSegment
-        ? `${topSegment.best.name} is outperforming other ${titleCase(topSegment.categoryColumn)} segments and should be used as the operating benchmark.`
-        : "Add revenue, cost, customer, and channel fields to unlock stronger opportunity detection.",
+      : concentration[0]
+        ? `${concentration[0].top.name} is a concentration signal: ${concentration[0].evidence}`
+        : topSegment
+          ? `${topSegment.best.name} is outperforming other ${titleCase(topSegment.categoryColumn)} segments and should be used as the operating benchmark.`
+          : "Add revenue, cost, customer, and channel fields to unlock stronger opportunity detection.",
     mostUnusualAnomaly: topAnomaly
       ? `${topAnomaly.title}. ${topAnomaly.detail}`
       : "No severe anomaly was detected. Current exceptions are within normal profiling limits.",
     executiveRecommendation: topSegment
       ? `Prioritize ${topSegment.best.name}, audit the weakest segment (${topSegment.weakest.name}), and use scenario planning before reallocating budget.`
-      : "Improve data completeness, connect operational drivers, and rerun the investigation before making high-value decisions.",
+      : semanticColumns.revenue?.length && !semanticColumns.cost?.length
+        ? "Revenue is visible but cost is missing. Add cost data before making margin, pricing, or budget decisions."
+        : "Improve data completeness, connect operational drivers, and rerun the investigation before making high-value decisions.",
     confidenceScore
   };
 }
@@ -709,6 +1094,9 @@ export function answerQuestion(question, dataset, analysis) {
     if (topCorrelation) {
       return `${titleCase(topCorrelation.a)} is the strongest detected factor linked to ${titleCase(topCorrelation.b)} with correlation ${topCorrelation.score.toFixed(2)}. This is a statistical signal, not proof of causality.`;
     }
+    if (analysis.seniorAnalyst?.driverAnalysis) {
+      return analysis.seniorAnalyst.driverAnalysis;
+    }
     return "No strong numeric driver was detected. Add operational inputs such as price, volume, channel, cost, churn, or marketing spend to improve driver analysis.";
   }
 
@@ -722,7 +1110,17 @@ export function answerQuestion(question, dataset, analysis) {
     return "No severe anomalies were detected by the current profiling rules.";
   }
 
-  return `The primary measure appears to be ${titleCase(measure?.name || "the main numeric column")}. Quality is ${formatPercent(analysis.qualityScore)}, with ${formatNumber(analysis.duplicateCount)} duplicate rows and ${formatNumber(analysis.outliers.length)} outlier values detected.`;
+  if (lower.includes("recommend") || lower.includes("next") || lower.includes("action")) {
+    return analysis.seniorAnalyst?.recommendedNextActions?.join(" ") || "No recommended action is available until the dataset has usable rows.";
+  }
+
+  if (lower.includes("kpi") || lower.includes("metric")) {
+    return analysis.kpis?.length
+      ? analysis.kpis.map((kpi) => kpi.evidence).join(" ")
+      : "No KPI-like columns were detected. Add fields such as Revenue, Sales, Cost, Profit, Quantity, Customer, Product, Region, or Channel.";
+  }
+
+  return `The primary measure appears to be ${titleCase(measure?.name || "the main numeric column")}. Quality is ${formatPercent(analysis.qualityScore)}, with ${formatNumber(analysis.duplicateCount)} duplicate rows and ${formatNumber(analysis.outliers.length)} outlier values detected. ${analysis.seniorAnalyst?.executiveSummary?.[1] || ""}`;
 }
 
 export function runScenario({ analysis, dataset, targetColumn, changePercent }) {

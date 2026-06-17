@@ -1,5 +1,7 @@
 import { analyzeDataset, answerQuestion, runScenario } from "../src/lib/analysis.js";
+import { buildInsightsExportRows, buildSimulationExportRows } from "../src/lib/export.js";
 import { parseDataFile } from "../src/lib/parser.js";
+import { strToU8, zipSync } from "fflate";
 
 const cases = [
   {
@@ -73,6 +75,52 @@ const cases = [
     name: "empty file",
     dataset: { rows: [], columns: [], metadata: { rowCount: 0, columnCount: 0, importedAt: new Date().toISOString() } },
     empty: true
+  },
+  {
+    name: "financial dataset",
+    dataset: dataset([
+      ["Month", "Revenue", "Cost", "Profit", "Region"],
+      ["2026-01-01", "10000", "7000", "3000", "North"],
+      ["2026-02-01", "12000", "8500", "3500", "North"],
+      ["2026-03-01", "9000", "8200", "800", "South"],
+      ["2026-04-01", "16000", "9000", "7000", "South"],
+      ["2026-05-01", "18000", "11000", "7000", "East"],
+      ["2026-06-01", "22000", "14000", "8000", "East"]
+    ])
+  },
+  {
+    name: "operations dataset",
+    dataset: dataset([
+      ["Date", "Branch", "Inventory", "Units", "Status"],
+      ["2026-01-01", "A", "400", "90", "Complete"],
+      ["2026-01-02", "A", "300", "120", "Complete"],
+      ["2026-01-03", "B", "80", "50", "Delayed"],
+      ["2026-01-04", "B", "40", "20", "Delayed"],
+      ["2026-01-05", "C", "500", "150", "Complete"]
+    ])
+  },
+  {
+    name: "customer dataset",
+    dataset: dataset([
+      ["Date", "Customer", "Product", "Channel", "Sales", "Churn"],
+      ["2026-01-01", "Acme", "Pro", "Partner", "900", "1"],
+      ["2026-01-02", "Acme", "Pro", "Partner", "1200", "1"],
+      ["2026-01-03", "Beta", "Lite", "Self Serve", "300", "8"],
+      ["2026-01-04", "Delta", "Pro", "Enterprise", "2000", "2"],
+      ["2026-01-05", "Beta", "Lite", "Self Serve", "250", "10"]
+    ])
+  },
+  {
+    name: "large dataset",
+    dataset: dataset([
+      ["Date", "Region", "Revenue", "Cost"],
+      ...Array.from({ length: 80 }, (_, index) => [
+        `2026-03-${String((index % 28) + 1).padStart(2, "0")}`,
+        ["North", "South", "East", "West"][index % 4],
+        String(1000 + index * 35),
+        String(500 + index * 15)
+      ])
+    ])
   }
 ];
 
@@ -82,8 +130,12 @@ for (const testCase of cases) {
   assert(Array.isArray(analysis.discoveryFeed), `${testCase.name}: discovery feed must exist`);
   assert(analysis.scoreBreakdown, `${testCase.name}: score breakdown must exist`);
   assert(analysis.investigation, `${testCase.name}: investigation must exist`);
+  assert(analysis.seniorAnalyst?.executiveSummary?.length >= 3, `${testCase.name}: senior analyst mode must include executive summary`);
+  assert(analysis.dataTeam?.length === 10, `${testCase.name}: data team must include ten specialist roles`);
+  assert(new Set(analysis.dataTeam.map((role) => role.recommendedAction)).size >= 6, `${testCase.name}: data roles must give differentiated recommendations`);
   assert(analysis.boardroom.length === 5, `${testCase.name}: boardroom must include final recommendation`);
   assert(typeof answerQuestion("What anomalies exist?", testCase.dataset, analysis) === "string", `${testCase.name}: assistant fallback must answer`);
+  assert(buildInsightsExportRows(analysis).some((row) => row.Section === "Data Team Intelligence"), `${testCase.name}: exports must include data team evidence`);
 
   if (testCase.noNumeric) {
     assert(analysis.numericColumns.length === 0, `${testCase.name}: should not detect numeric columns`);
@@ -93,6 +145,12 @@ for (const testCase of cases) {
     const scenario = runScenario({ analysis, dataset: testCase.dataset, changePercent: 10 });
     assert(scenario?.riskLevel, `${testCase.name}: simulation must include risk level`);
     assert(scenario?.recommendation, `${testCase.name}: simulation must include recommendation`);
+    assert(buildSimulationExportRows(scenario).length === 1, `${testCase.name}: simulation export must use generated scenario`);
+  }
+
+  if (!testCase.empty && !analysis.dateColumns.length) {
+    assert(analysis.forecasts.length === 0, `${testCase.name}: forecast must fall back when dates are missing`);
+    assert(analysis.limitations.some((item) => item.toLowerCase().includes("date")), `${testCase.name}: limitations must explain missing date impact`);
   }
 }
 
@@ -103,6 +161,11 @@ assert(parsedNormalCsv.columns.includes("Sales"), "CSV parser: normal CSV should
 const parsedMessyCsv = await parseDataFile(csvFile("messy.csv", "\n Messy Sales , ,Region\n100,,North\n, ,\n240,,South\n"));
 assert(parsedMessyCsv.rows.length === 2, "CSV parser: messy CSV should drop blank rows");
 assert(parsedMessyCsv.columns.length === 3, "CSV parser: messy CSV should create safe missing headers");
+
+const parsedInlineStringXlsx = await parseDataFile(emptyInlineStringXlsxFile());
+assert(parsedInlineStringXlsx.rows.length === 2, "XLSX parser: empty inlineStr workbook should preserve usable rows");
+assert(parsedInlineStringXlsx.rows[0].Customer === "", "XLSX parser: empty inlineStr cell should become an empty string");
+assert(parsedInlineStringXlsx.columns.includes("Revenue"), "XLSX parser: inlineStr workbook should preserve headers");
 
 await expectReject(() => parseDataFile(csvFile("empty.csv", "")), "CSV parser: empty file should reject");
 await expectReject(() => parseDataFile(new File(["hello"], "bad.txt", { type: "text/plain" })), "Parser: invalid file type should reject");
@@ -124,8 +187,10 @@ assert(activeFlowA.activeFileName === "uploaded-a.csv", "Active flow: file name 
 assert(activeFlowA.rowCount !== activeFlowB.rowCount, "Active flow: row count must reflect uploaded file");
 assert(activeFlowA.qualityScore !== activeFlowB.qualityScore || activeFlowA.report !== activeFlowB.report, "Active flow: different uploads must produce different analysis output");
 assert(activeFlowA.scenario?.baseline !== activeFlowB.scenario?.baseline, "Active flow: simulation must recalculate from uploaded rows");
+assert(activeFlowA.seniorAnalyst !== activeFlowB.seniorAnalyst, "Active flow: senior analyst mode must change per upload");
+assert(activeFlowA.dataTeamEvidence !== activeFlowB.dataTeamEvidence, "Active flow: role evidence must change per upload");
 
-console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser and active-dataset checks.`);
+console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser, active-dataset, export, forecast fallback, and data-team checks.`);
 
 function dataset(table) {
   const columns = table[0];
@@ -156,6 +221,50 @@ function csvFile(name, content) {
   return new File([content], name, { type: "text/csv" });
 }
 
+function emptyInlineStringXlsxFile() {
+  const files = {
+    "[Content_Types].xml": strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+      <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+        <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+        <Default Extension="xml" ContentType="application/xml"/>
+        <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+        <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+      </Types>`),
+    "_rels/.rels": strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+      <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+        <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+      </Relationships>`),
+    "xl/workbook.xml": strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+      <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+        <sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>
+      </workbook>`),
+    "xl/_rels/workbook.xml.rels": strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+      <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+        <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+      </Relationships>`),
+    "xl/worksheets/sheet1.xml": strToU8(`<?xml version="1.0" encoding="UTF-8"?>
+      <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+        <sheetData>
+          <row r="1">
+            <c r="A1" t="inlineStr"><is><t>Customer</t></is></c>
+            <c r="B1" t="inlineStr"><is><t>Revenue</t></is></c>
+          </row>
+          <row r="2">
+            <c r="A2" t="inlineStr"></c>
+            <c r="B2"><v>100</v></c>
+          </row>
+          <row r="3">
+            <c r="A3" t="inlineStr"><is><t>Ray</t></is></c>
+            <c r="B3"><v>250</v></c>
+          </row>
+        </sheetData>
+      </worksheet>`)
+  };
+  return new File([zipSync(files)], "empty-inline-string.xlsx", {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  });
+}
+
 async function expectReject(task, message) {
   try {
     await task();
@@ -179,6 +288,8 @@ function simulateActiveUpload(activeFileName, activeDataset) {
     discoveryCount: analysis.discoveryFeed.length,
     investigation: analysis.investigation,
     boardroom: analysis.boardroom,
+    seniorAnalyst: analysis.seniorAnalyst.executiveSummary.join(" "),
+    dataTeamEvidence: analysis.dataTeam.map((role) => role.evidence).join(" "),
     scenario: runScenario({ analysis, dataset: activeDataset, changePercent: 10 })
   };
 }

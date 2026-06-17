@@ -25,6 +25,8 @@ export function DecisionIntelligence({ analysis }) {
   return (
     <section className="grid gap-5" id="investigation">
       <InvestigationMode investigation={analysis.investigation} />
+      <SeniorDataAnalystMode seniorAnalyst={analysis.seniorAnalyst} />
+      <DataTeamIntelligence dataTeam={analysis.dataTeam} />
       <div className="grid gap-5 xl:grid-cols-[0.58fr_0.42fr]">
         <RelationshipMap graph={analysis.relationshipGraph} />
         <ForecastingEngine forecasts={analysis.forecasts} />
@@ -33,6 +35,90 @@ export function DecisionIntelligence({ analysis }) {
       <div className="grid gap-5 xl:grid-cols-[0.54fr_0.46fr]">
         <OpportunityScanner opportunities={analysis.opportunities} />
         <EarlyWarningSystem warnings={analysis.earlyWarnings} />
+      </div>
+    </section>
+  );
+}
+
+function SeniorDataAnalystMode({ seniorAnalyst }) {
+  const sections = [
+    ["Executive summary", seniorAnalyst.executiveSummary],
+    ["KPI detection", seniorAnalyst.kpiDetection],
+    ["Variance analysis", seniorAnalyst.varianceAnalysis],
+    ["Root cause hypotheses", seniorAnalyst.rootCauseHypotheses],
+    ["Data quality concerns", seniorAnalyst.dataQualityConcerns],
+    ["Recommended next actions", seniorAnalyst.recommendedNextActions],
+    ["Leadership questions", seniorAnalyst.leadershipQuestions]
+  ];
+
+  return (
+    <section className="panel reveal-card rounded-lg p-4 sm:p-6" id="senior-analyst">
+      <div className="mb-5 grid gap-3 lg:grid-cols-[0.36fr_0.64fr]">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">Senior Data Analyst Mode</p>
+          <h2 className="mt-1 text-2xl font-black text-white">Evidence-based analyst review</h2>
+          <p className="mt-3 text-sm leading-6 text-white/58">{seniorAnalyst.businessContext}</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <AnalystCallout title="Trend analysis" body={seniorAnalyst.trendAnalysis} />
+          <AnalystCallout title="Segment analysis" body={seniorAnalyst.segmentAnalysis} />
+          <AnalystCallout title="Driver analysis" body={seniorAnalyst.driverAnalysis} />
+          <AnalystCallout title="Risk assessment" body={seniorAnalyst.riskAssessment} />
+          <AnalystCallout title="Opportunity assessment" body={seniorAnalyst.opportunityAssessment} />
+          <AnalystCallout title="Outlier investigation" body={seniorAnalyst.outlierInvestigation} />
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {sections.map(([title, items]) => (
+          <article key={title} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <h3 className="font-extrabold text-white">{title}</h3>
+            <div className="mt-3 grid gap-2">
+              {items.slice(0, 4).map((item) => (
+                <p key={item} className="text-sm leading-6 text-white/62">{item}</p>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AnalystCallout({ title, body }) {
+  return (
+    <article className="rounded-lg border border-signal/20 bg-signal/10 p-4">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-white/66">{body}</p>
+    </article>
+  );
+}
+
+function DataTeamIntelligence({ dataTeam }) {
+  return (
+    <section className="panel reveal-card rounded-lg p-4 sm:p-6" id="data-team">
+      <div className="mb-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">Data Team Intelligence</p>
+        <h2 className="mt-1 text-2xl font-black text-white">Ten specialist reviews from the same uploaded dataset</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+          Each role evaluates the current data through a different professional lens and cites evidence before recommending action.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {dataTeam.map((role) => (
+          <article key={role.persona} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-extrabold text-white">{role.persona}</h3>
+                <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-white/38">{role.focus}</p>
+              </div>
+              <span className="rounded bg-signal/10 px-2 py-1 text-xs font-black text-signal">{role.confidenceLevel}%</span>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-white/66"><strong className="text-white">Observation:</strong> {role.observation}</p>
+            <p className="mt-2 text-sm leading-6 text-white/60"><strong className="text-white">Evidence:</strong> {role.evidence}</p>
+            <p className="mt-2 text-sm leading-6 text-white/60"><strong className="text-white">Risk/opportunity:</strong> {role.riskOrOpportunity}</p>
+            <p className="mt-3 border-t border-white/10 pt-3 text-sm font-semibold leading-6 text-signal">{role.recommendedAction}</p>
+          </article>
+        ))}
       </div>
     </section>
   );

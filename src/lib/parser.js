@@ -51,7 +51,7 @@ async function parseWorkbook(file) {
     return normalizeParsedData(sheetRows);
   } catch (error) {
     const message = String(error?.message || "");
-    if (message.includes("inline string") || message.includes("inlineStr") || message.includes("cell value structure")) {
+    if (message.includes("inline string") || message.includes("inlineStr") || message.includes("cell value structure") || message.includes("DOMParser")) {
       const fallbackRows = await parseWorkbookXmlFallback(file);
       return normalizeParsedData(fallbackRows);
     }
@@ -139,10 +139,6 @@ function normalizeRows(rows, rawColumns) {
 }
 
 async function parseWorkbookXmlFallback(file) {
-  if (typeof DOMParser === "undefined") {
-    throw new Error("This browser cannot use the fallback XLSX parser.");
-  }
-
   const workbook = unzipSync(new Uint8Array(await file.arrayBuffer()));
   const sharedStrings = parseSharedStrings(workbook);
   const sheetPath = findFirstWorksheetPath(workbook);
@@ -151,14 +147,13 @@ async function parseWorkbookXmlFallback(file) {
     throw new Error("The XLSX workbook does not contain a readable worksheet.");
   }
 
-  const document = parseXml(strFromU8(sheetXml));
-  const rowNodes = Array.from(document.getElementsByTagName("row"));
-  return rowNodes.map((rowNode) => {
+  const rowNodes = getTagBlocks(strFromU8(sheetXml), "row");
+  return rowNodes.map((rowXml) => {
     const row = [];
-    Array.from(rowNode.getElementsByTagName("c")).forEach((cellNode) => {
-      const ref = cellNode.getAttribute("r") || "";
+    getTagBlocks(rowXml, "c").forEach((cellXml) => {
+      const ref = getAttribute(cellXml, "r") || "";
       const index = columnIndexFromCellRef(ref);
-      row[index] = readCellValue(cellNode, sharedStrings);
+      row[index] = readCellValue(cellXml, sharedStrings);
     });
     return row.map((value) => value ?? "");
   });
@@ -167,10 +162,9 @@ async function parseWorkbookXmlFallback(file) {
 function parseSharedStrings(workbook) {
   const xml = workbook["xl/sharedStrings.xml"];
   if (!xml) return [];
-  const document = parseXml(strFromU8(xml));
-  return Array.from(document.getElementsByTagName("si")).map((node) =>
-    Array.from(node.getElementsByTagName("t"))
-      .map((textNode) => textNode.textContent || "")
+  return getTagBlocks(strFromU8(xml), "si").map((node) =>
+    getTagBlocks(node, "t")
+      .map((textNode) => decodeXml(stripTags(textNode)))
       .join("")
   );
 }
@@ -182,30 +176,28 @@ function findFirstWorksheetPath(workbook) {
     return "xl/worksheets/sheet1.xml";
   }
 
-  const workbookDoc = parseXml(strFromU8(workbookXml));
-  const relsDoc = parseXml(strFromU8(relsXml));
-  const firstSheet = workbookDoc.getElementsByTagName("sheet")[0];
-  const relationshipId = firstSheet?.getAttribute("r:id");
+  const firstSheet = getTagBlocks(strFromU8(workbookXml), "sheet")[0];
+  const relationshipId = firstSheet ? getAttribute(firstSheet, "r:id") : "";
   if (!relationshipId) return "xl/worksheets/sheet1.xml";
 
-  const rel = Array.from(relsDoc.getElementsByTagName("Relationship")).find(
-    (node) => node.getAttribute("Id") === relationshipId
+  const rel = getTagBlocks(strFromU8(relsXml), "Relationship").find(
+    (node) => getAttribute(node, "Id") === relationshipId
   );
-  const target = rel?.getAttribute("Target") || "worksheets/sheet1.xml";
+  const target = rel ? getAttribute(rel, "Target") : "worksheets/sheet1.xml";
   return target.startsWith("/") ? target.slice(1) : `xl/${target.replace(/^xl\//, "")}`;
 }
 
-function readCellValue(cellNode, sharedStrings) {
-  const type = cellNode.getAttribute("t");
+function readCellValue(cellXml, sharedStrings) {
+  const type = getAttribute(cellXml, "t");
   if (type === "inlineStr") {
-    const inlineString = cellNode.getElementsByTagName("is")[0];
+    const inlineString = getTagBlocks(cellXml, "is")[0];
     if (!inlineString) return "";
-    return Array.from(inlineString.getElementsByTagName("t"))
-      .map((node) => node.textContent || "")
+    return getTagBlocks(inlineString, "t")
+      .map((node) => decodeXml(stripTags(node)))
       .join("");
   }
 
-  const value = cellNode.getElementsByTagName("v")[0]?.textContent ?? "";
+  const value = decodeXml(stripTags(getTagBlocks(cellXml, "v")[0] || ""));
   if (type === "s") {
     return sharedStrings[Number(value)] ?? "";
   }
@@ -215,8 +207,29 @@ function readCellValue(cellNode, sharedStrings) {
   return value;
 }
 
-function parseXml(xml) {
-  return new DOMParser().parseFromString(xml, "application/xml");
+function getTagBlocks(xml, tag) {
+  const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`<${escapedTag}\\b[^>]*(?:/>|>[\\s\\S]*?<\\/${escapedTag}>)`, "gi");
+  return xml.match(pattern) || [];
+}
+
+function getAttribute(xml, name) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = xml.match(new RegExp(`\\s${escapedName}=["']([^"']*)["']`, "i"));
+  return match ? decodeXml(match[1]) : "";
+}
+
+function stripTags(xml = "") {
+  return String(xml).replace(/<[^>]*>/g, "");
+}
+
+function decodeXml(value = "") {
+  return String(value)
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
 }
 
 function columnIndexFromCellRef(ref) {

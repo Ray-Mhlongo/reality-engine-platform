@@ -199,6 +199,8 @@ function Header() {
     ["Upload", "#upload"],
     ["How", "#how-it-works"],
     ["Investigation", "#investigation"],
+    ["Analyst", "#senior-analyst"],
+    ["Data Team", "#data-team"],
     ["Forecast", "#forecast"],
     ["Boardroom", "#boardroom"],
     ["Exports", "#exports"]
