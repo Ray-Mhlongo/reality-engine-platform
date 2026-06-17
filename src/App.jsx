@@ -16,12 +16,13 @@ import {
 import { useMemo, useState } from "react";
 import { Assistant } from "./components/Assistant";
 import { Dashboard } from "./components/Dashboard";
+import { DataQualityStudio } from "./components/DataQualityStudio";
 import { DecisionIntelligence } from "./components/DecisionIntelligence";
 import { IntelligenceReport } from "./components/IntelligenceReport";
 import { CaseStudyModal, ExportCenter, HowItWorks, PortfolioFooter, PrivacyNotice } from "./components/PortfolioPolish";
 import { SimulationEngine } from "./components/SimulationEngine";
 import { UploadZone } from "./components/UploadZone";
-import { analyzeDataset, runScenario } from "./lib/analysis";
+import { analyzeDataset, cleanDataset, runScenario } from "./lib/analysis";
 import { parseDataFile } from "./lib/parser";
 import { persistDatasetMetadata } from "./services/realityApi";
 
@@ -79,6 +80,9 @@ const processingSteps = [
 
 export default function App() {
   const [activeDataset, setActiveDataset] = useState(sampleDataset);
+  const [originalDataset, setOriginalDataset] = useState(sampleDataset);
+  const [cleanedDataset, setCleanedDataset] = useState(null);
+  const [datasetMode, setDatasetMode] = useState("original");
   const [activeFileName, setActiveFileName] = useState("venture-sample.csv");
   const [activeSource, setActiveSource] = useState("demo");
   const [lastAnalyzedAt, setLastAnalyzedAt] = useState(new Date().toISOString());
@@ -123,6 +127,9 @@ export default function App() {
       setProcessingStep("Running decision intelligence");
       await waitForUi();
       setActiveDataset(parsed);
+      setOriginalDataset(parsed);
+      setCleanedDataset(null);
+      setDatasetMode("original");
       setActiveFileName(file.name);
       setActiveSource("uploaded");
       setLastAnalyzedAt(new Date().toISOString());
@@ -142,6 +149,9 @@ export default function App() {
   function loadSample() {
     const nextAnalysis = analyzeDataset(sampleDataset);
     setActiveDataset(sampleDataset);
+    setOriginalDataset(sampleDataset);
+    setCleanedDataset(null);
+    setDatasetMode("original");
     setActiveFileName("venture-sample.csv");
     setActiveSource("demo");
     setLastAnalyzedAt(new Date().toISOString());
@@ -152,12 +162,35 @@ export default function App() {
 
   function clearUploadedFile() {
     setActiveDataset(emptyDataset);
+    setOriginalDataset(emptyDataset);
+    setCleanedDataset(null);
+    setDatasetMode("original");
     setActiveFileName("No active file");
     setActiveSource("none");
     setLastAnalyzedAt(new Date().toISOString());
     setProcessingStep("Analysis complete");
     setScenario(null);
     setError("");
+  }
+
+  function applyCleaning() {
+    const nextCleanedDataset = cleanDataset(originalDataset);
+    const nextAnalysis = analyzeDataset(nextCleanedDataset);
+    setCleanedDataset(nextCleanedDataset);
+    setActiveDataset(nextCleanedDataset);
+    setDatasetMode("cleaned");
+    setLastAnalyzedAt(new Date().toISOString());
+    setScenario(runScenario({ analysis: nextAnalysis, dataset: nextCleanedDataset, changePercent: 10 }));
+    setError("");
+  }
+
+  function switchDatasetMode(nextMode) {
+    const nextDataset = nextMode === "cleaned" && cleanedDataset ? cleanedDataset : originalDataset;
+    const nextAnalysis = analyzeDataset(nextDataset);
+    setDatasetMode(nextMode === "cleaned" && cleanedDataset ? "cleaned" : "original");
+    setActiveDataset(nextDataset);
+    setLastAnalyzedAt(new Date().toISOString());
+    setScenario(runScenario({ analysis: nextAnalysis, dataset: nextDataset, changePercent: 10 }));
   }
 
   return (
@@ -179,6 +212,13 @@ export default function App() {
           processingSteps={processingSteps}
         />
         <PrivacyNotice />
+        <DataQualityStudio
+          analysis={analysis}
+          datasetMode={datasetMode}
+          hasCleanedDataset={Boolean(cleanedDataset)}
+          onDatasetMode={switchDatasetMode}
+          onCleanDataset={applyCleaning}
+        />
         <DecisionIntelligence analysis={analysis} />
         <Dashboard dataset={activeDataset} analysis={analysis} scenario={scenario} />
         <IntelligenceReport intelligence={analysis.intelligence} analysis={analysis} scenario={scenario} />
@@ -197,10 +237,12 @@ export default function App() {
 function Header() {
   const links = [
     ["Upload", "#upload"],
+    ["Quality", "#quality-studio"],
     ["How", "#how-it-works"],
     ["Investigation", "#investigation"],
     ["Analyst", "#senior-analyst"],
     ["Data Team", "#data-team"],
+    ["Consulting", "#executive-consulting"],
     ["Forecast", "#forecast"],
     ["Boardroom", "#boardroom"],
     ["Exports", "#exports"]

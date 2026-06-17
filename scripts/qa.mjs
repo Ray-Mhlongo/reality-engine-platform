@@ -1,4 +1,4 @@
-import { analyzeDataset, answerQuestion, runScenario } from "../src/lib/analysis.js";
+import { analyzeDataset, answerQuestion, cleanDataset, runScenario } from "../src/lib/analysis.js";
 import { buildInsightsExportRows, buildSimulationExportRows } from "../src/lib/export.js";
 import { parseDataFile } from "../src/lib/parser.js";
 import { strToU8, zipSync } from "fflate";
@@ -130,9 +130,20 @@ for (const testCase of cases) {
   assert(Array.isArray(analysis.discoveryFeed), `${testCase.name}: discovery feed must exist`);
   assert(analysis.scoreBreakdown, `${testCase.name}: score breakdown must exist`);
   assert(analysis.investigation, `${testCase.name}: investigation must exist`);
+  assert(analysis.cleaningStudio?.readiness, `${testCase.name}: cleaning studio must produce readiness`);
+  assert(Number.isFinite(analysis.cleaningStudio.scores.trustScore), `${testCase.name}: trust score must be finite`);
   assert(analysis.seniorAnalyst?.executiveSummary?.length >= 3, `${testCase.name}: senior analyst mode must include executive summary`);
   assert(analysis.dataTeam?.length === 10, `${testCase.name}: data team must include ten specialist roles`);
   assert(new Set(analysis.dataTeam.map((role) => role.recommendedAction)).size >= 6, `${testCase.name}: data roles must give differentiated recommendations`);
+  assert(analysis.dataTeam.every((role) => role.businessImpact && role.confidence), `${testCase.name}: each role must include business impact and confidence`);
+  assert(analysis.businessReasoning?.length >= 1, `${testCase.name}: business reasoning must exist`);
+  assert(analysis.rootCauseInvestigations?.length >= 1, `${testCase.name}: root-cause investigations must exist`);
+  assert(analysis.executiveConsulting?.decisions?.length === 3, `${testCase.name}: executive consulting must produce three leadership decisions`);
+  assert(analysis.engineeringReview?.recommendation, `${testCase.name}: data engineering review must exist`);
+  assert(analysis.analyticsEngineeringReview?.metricLayer, `${testCase.name}: analytics engineering review must exist`);
+  assert(analysis.financialAnalysis?.financialRiskAssessment, `${testCase.name}: financial analysis must exist`);
+  assert(analysis.operationsAnalysis?.operationalHealthAssessment, `${testCase.name}: operations analysis must exist`);
+  assert(analysis.growthAnalysis?.growthOpportunityAssessment, `${testCase.name}: growth analysis must exist`);
   assert(analysis.boardroom.length === 5, `${testCase.name}: boardroom must include final recommendation`);
   assert(typeof answerQuestion("What anomalies exist?", testCase.dataset, analysis) === "string", `${testCase.name}: assistant fallback must answer`);
   assert(buildInsightsExportRows(analysis).some((row) => row.Section === "Data Team Intelligence"), `${testCase.name}: exports must include data team evidence`);
@@ -146,6 +157,13 @@ for (const testCase of cases) {
     assert(scenario?.riskLevel, `${testCase.name}: simulation must include risk level`);
     assert(scenario?.recommendation, `${testCase.name}: simulation must include recommendation`);
     assert(buildSimulationExportRows(scenario).length === 1, `${testCase.name}: simulation export must use generated scenario`);
+  }
+
+  if (testCase.name.includes("missing values")) {
+    const cleaned = cleanDataset(testCase.dataset);
+    const cleanedAnalysis = analyzeDataset(cleaned);
+    assert(cleaned.rows.length < testCase.dataset.rows.length, `${testCase.name}: cleaning should remove blank/duplicate rows`);
+    assert(cleanedAnalysis.cleaningStudio.scores.uniquenessScore >= analysis.cleaningStudio.scores.uniquenessScore, `${testCase.name}: cleaning should not reduce uniqueness score`);
   }
 
   if (!testCase.empty && !analysis.dateColumns.length) {
@@ -189,6 +207,7 @@ assert(activeFlowA.qualityScore !== activeFlowB.qualityScore || activeFlowA.repo
 assert(activeFlowA.scenario?.baseline !== activeFlowB.scenario?.baseline, "Active flow: simulation must recalculate from uploaded rows");
 assert(activeFlowA.seniorAnalyst !== activeFlowB.seniorAnalyst, "Active flow: senior analyst mode must change per upload");
 assert(activeFlowA.dataTeamEvidence !== activeFlowB.dataTeamEvidence, "Active flow: role evidence must change per upload");
+assert(activeFlowA.consultingDecisions !== activeFlowB.consultingDecisions, "Active flow: executive decisions must change per upload");
 
 console.log(`Reality Engine QA passed ${cases.length} dataset scenarios plus upload parser, active-dataset, export, forecast fallback, and data-team checks.`);
 
@@ -290,6 +309,7 @@ function simulateActiveUpload(activeFileName, activeDataset) {
     boardroom: analysis.boardroom,
     seniorAnalyst: analysis.seniorAnalyst.executiveSummary.join(" "),
     dataTeamEvidence: analysis.dataTeam.map((role) => role.evidence).join(" "),
+    consultingDecisions: analysis.executiveConsulting.decisions.map((item) => item.expectedImpact).join(" "),
     scenario: runScenario({ analysis, dataset: activeDataset, changePercent: 10 })
   };
 }

@@ -2,6 +2,46 @@ import { formatNumber, formatPercent, titleCase } from "./format.js";
 
 const MISSING = new Set(["", "na", "n/a", "null", "undefined", "-", "--"]);
 
+export function cleanDataset(dataset) {
+  const columns = normalizeHeaders(dataset.columns || []);
+  const sourceRows = (dataset.rows || []).map((row) => {
+    const cleaned = {};
+    (dataset.columns || []).forEach((oldColumn, index) => {
+      cleaned[columns[index]] = cleanValue(row[oldColumn]);
+    });
+    return cleaned;
+  });
+  const nonBlankColumns = columns.filter((column) => sourceRows.some((row) => !isMissing(row[column])));
+  const seen = new Set();
+  const rows = sourceRows
+    .map((row) =>
+      nonBlankColumns.reduce((record, column) => {
+        record[column] = row[column] ?? "";
+        return record;
+      }, {})
+    )
+    .filter((row) => Object.values(row).some((value) => !isMissing(value)))
+    .filter((row) => {
+      const key = JSON.stringify(row);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+  return {
+    rows,
+    columns: nonBlankColumns,
+    metadata: {
+      rowCount: rows.length,
+      columnCount: nonBlankColumns.length,
+      importedAt: dataset.metadata?.importedAt || new Date().toISOString(),
+      cleanedAt: new Date().toISOString(),
+      sourceRowCount: dataset.metadata?.rowCount || dataset.rows?.length || 0,
+      sourceColumnCount: dataset.metadata?.columnCount || dataset.columns?.length || 0
+    }
+  };
+}
+
 export function analyzeDataset(dataset) {
   const { rows, columns, metadata } = dataset;
   const columnProfiles = columns.map((column) => profileColumn(rows, column));
@@ -18,6 +58,7 @@ export function analyzeDataset(dataset) {
   const anomalies = detectAnomalies(rows, numericColumns, outliers);
   const qualityScore = calculateQualityScore(rows.length, columns.length, columnProfiles, duplicateCount, outliers.length);
   const scoreBreakdown = calculateScoreBreakdown(rows.length, columns.length, columnProfiles, duplicateCount, outliers.length);
+  const cleaningStudio = buildCleaningStudio({ rows, columns, columnProfiles, duplicateCount, outliers });
   const relationshipGraph = discoverRelationships(rows, categoricalColumns, numericColumns);
   const forecasts = generateForecasts(rows, numericColumns, dateColumns);
   const earlyWarnings = generateEarlyWarnings({ qualityScore, duplicateCount, rows, trends, anomalies, numericColumns, categoryPerformance });
@@ -28,6 +69,14 @@ export function analyzeDataset(dataset) {
   const concentration = detectConcentration({ rows, categoricalColumns, numericColumns, semanticColumns });
   const varianceAnalysis = buildVarianceAnalysis({ trends, periodComparison, kpis });
   const limitations = buildAnalysisLimitations({ rows, numericColumns, categoricalColumns, dateColumns, semanticColumns, forecasts });
+  const businessReasoning = generateBusinessReasoning({ correlations, trends, categoryPerformance, semanticColumns, kpis, limitations });
+  const rootCauseInvestigations = generateRootCauseInvestigations({ trends, categoryPerformance, correlations, anomalies, earlyWarnings, limitations });
+  const engineeringReview = generateEngineeringReview({ columns, rows, columnProfiles, semanticColumns, cleaningStudio });
+  const analyticsEngineeringReview = generateAnalyticsEngineeringReview({ numericColumns, categoricalColumns, semanticColumns, kpis });
+  const financialAnalysis = generateFinancialAnalysis({ kpis, semanticColumns, numericColumns, concentration, periodComparison, trends });
+  const operationsAnalysis = generateOperationsAnalysis({ semanticColumns, categoryPerformance, concentration, earlyWarnings });
+  const growthAnalysis = generateGrowthAnalysis({ semanticColumns, concentration, opportunities, categoryPerformance });
+  const executiveConsulting = generateExecutiveConsulting({ earlyWarnings, opportunities, rootCauseInvestigations, financialAnalysis, operationsAnalysis, growthAnalysis, qualityScore });
   const discoveryFeed = buildDiscoveryFeed({
     trends,
     correlations,
@@ -61,6 +110,14 @@ export function analyzeDataset(dataset) {
     concentration,
     varianceAnalysis,
     limitations,
+    businessReasoning,
+    rootCauseInvestigations,
+    engineeringReview,
+    analyticsEngineeringReview,
+    financialAnalysis,
+    operationsAnalysis,
+    growthAnalysis,
+    executiveConsulting,
     seniorAnalyst: generateSeniorAnalystMode({
       metadata,
       qualityScore,
@@ -101,6 +158,7 @@ export function analyzeDataset(dataset) {
     dateRange,
     categorySummaries,
     scoreBreakdown,
+    cleaningStudio,
     investigation: generateInvestigation({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings, semanticColumns, kpis, periodComparison, concentration }),
     boardroom: generateBoardroom({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings }),
     qualityScore,
@@ -285,6 +343,76 @@ function detectAnomalies(rows, numericColumns, outliers) {
     .slice(0, 4);
 
   return [...outlierAnomalies, ...volatility].slice(0, 10);
+}
+
+function buildCleaningStudio({ rows, columns, columnProfiles, duplicateCount, outliers }) {
+  const missingCells = columnProfiles.reduce((total, profile) => total + profile.missing, 0);
+  const totalCells = Math.max(1, rows.length * Math.max(1, columns.length));
+  const duplicateColumns = findDuplicateColumns(columns);
+  const blankHeaders = columns.filter((column) => /^column\s+\d+$/i.test(column)).length;
+  const whitespaceIssues = rows.reduce(
+    (total, row) => total + columns.filter((column) => String(row[column] ?? "") !== String(row[column] ?? "").trim()).length,
+    0
+  );
+  const invalidDates = columnProfiles
+    .filter((profile) => /date|month|period|time/i.test(profile.name) && profile.type !== "date")
+    .reduce((total, profile) => total + rows.filter((row) => !isMissing(row[profile.name]) && !toDate(row[profile.name])).length, 0);
+  const invalidNumerics = columnProfiles
+    .filter((profile) => /revenue|sales|cost|profit|margin|amount|quantity|units|inventory|churn|expense/i.test(profile.name) && profile.type !== "number")
+    .reduce((total, profile) => total + rows.filter((row) => !isMissing(row[profile.name]) && !Number.isFinite(toNumber(row[profile.name]))).length, 0);
+  const negativeRisks = columnProfiles
+    .filter((profile) => profile.type === "number" && /revenue|sales|quantity|units|inventory|customer|count/i.test(profile.name))
+    .flatMap((profile) => rows.map((row, index) => ({ column: profile.name, index, value: toNumber(row[profile.name]) })).filter((item) => item.value < 0));
+  const categoryIssues = detectCategoryInconsistency(rows, columnProfiles);
+  const potentialDataLeakage = detectPotentialDataLeakage(columnProfiles);
+  const potentialDerivedColumns = detectPotentialDerivedColumns(columnProfiles);
+  const primaryKeyIssues = detectPrimaryKeyIssues(rows, columnProfiles);
+  const foreignKeyIssues = detectForeignKeyIssues(columnProfiles);
+
+  const completenessScore = Math.max(0, 100 - (missingCells / totalCells) * 100);
+  const consistencyScore = Math.max(0, 100 - (duplicateCount / Math.max(1, rows.length)) * 45 - Math.min(30, categoryIssues.length * 6) - Math.min(20, whitespaceIssues / Math.max(1, rows.length)));
+  const validityScore = Math.max(0, 100 - Math.min(45, ((invalidDates + invalidNumerics) / totalCells) * 120) - Math.min(25, negativeRisks.length * 3));
+  const uniquenessScore = Math.max(0, 100 - (duplicateCount / Math.max(1, rows.length)) * 100 - duplicateColumns.length * 8);
+  const trustScore = Math.max(0, Math.min(100, completenessScore * 0.28 + consistencyScore * 0.22 + validityScore * 0.25 + uniquenessScore * 0.25));
+  const readiness = trustScore >= 86 && duplicateCount === 0 ? "Ready For Analysis" : trustScore >= 65 ? "Ready With Warnings" : "Not Ready For Analysis";
+
+  const issues = [
+    issue("Missing values", missingCells, `${formatNumber(missingCells)} missing cells across ${formatNumber(columns.length)} columns.`),
+    issue("Duplicate rows", duplicateCount, `${formatNumber(duplicateCount)} rows repeat exactly and may inflate totals.`),
+    issue("Duplicate columns", duplicateColumns.length, duplicateColumns.length ? `${duplicateColumns.join(", ")} appear more than once.` : "No duplicate column names detected."),
+    issue("Invalid dates", invalidDates, `${formatNumber(invalidDates)} date-like values could not be parsed.`),
+    issue("Invalid numeric values", invalidNumerics, `${formatNumber(invalidNumerics)} metric-like values are not numeric.`),
+    issue("Negative value risks", negativeRisks.length, `${formatNumber(negativeRisks.length)} non-negative business fields contain negative values.`),
+    issue("Blank headers", blankHeaders, `${formatNumber(blankHeaders)} generated headers indicate blank source headers.`),
+    issue("Whitespace issues", whitespaceIssues, `${formatNumber(whitespaceIssues)} cells include leading or trailing whitespace.`),
+    issue("Inconsistent categories", categoryIssues.length, categoryIssues[0]?.detail || "No obvious category casing/spacing inconsistencies detected."),
+    issue("Outliers", outliers.length, `${formatNumber(outliers.length)} numeric outlier values may distort averages and forecasts.`),
+    issue("Potential data leakage", potentialDataLeakage.length, potentialDataLeakage[0]?.detail || "No obvious future/target leakage column names detected."),
+    issue("Potential derived columns", potentialDerivedColumns.length, potentialDerivedColumns[0]?.detail || "No obvious derived metric columns detected."),
+    issue("Primary key issues", primaryKeyIssues.length, primaryKeyIssues[0]?.detail || "No obvious primary key issue detected."),
+    issue("Foreign key issues", foreignKeyIssues.length, foreignKeyIssues[0]?.detail || "No obvious foreign key naming issue detected.")
+  ];
+
+  return {
+    scores: { dataQualityScore: trustScore, completenessScore, consistencyScore, validityScore, uniquenessScore, trustScore },
+    readiness,
+    readinessReason: explainReadiness({ readiness, duplicateCount, missingCells, invalidDates, invalidNumerics, outliers, trustScore }),
+    analystCommentary: buildQualityCommentary({ readiness, duplicateCount, missingCells, invalidDates, invalidNumerics, outliers, trustScore }),
+    issues,
+    cleaningActions: [
+      "Remove duplicates",
+      "Trim whitespace",
+      "Standardize casing",
+      "Normalize dates",
+      "Remove blank rows",
+      "Remove blank columns",
+      "Normalize headers"
+    ]
+  };
+}
+
+function issue(name, count, detail) {
+  return { name, count, severity: count > 50 ? "High" : count > 0 ? "Medium" : "Low", detail };
 }
 
 function inferSemanticColumns(columnProfiles) {
@@ -487,6 +615,225 @@ function buildAnalysisLimitations({ rows, numericColumns, categoricalColumns, da
   return limitations;
 }
 
+function generateBusinessReasoning({ correlations, trends, categoryPerformance, kpis, limitations }) {
+  const reasoning = [];
+  correlations.slice(0, 4).forEach((correlation) => {
+    reasoning.push({
+      finding: `${titleCase(correlation.a)} and ${titleCase(correlation.b)} move together.`,
+      reasoningType: Math.abs(correlation.score) >= 0.75 ? "Strong association" : "Moderate association",
+      whyItMatters: "This relationship can guide investigation, but it should not be treated as proof of causation.",
+      potentialCauses: ["Pricing rules", "Shared demand patterns", "Operational dependency", "Derived-field relationship"],
+      alternativeExplanations: ["Coincidence in a small sample", "Both fields reacting to another hidden variable", "One field calculated from the other"],
+      evidenceMissing: "Controlled tests, source-system lineage, business process rules, and time-lagged analysis.",
+      investigateNext: `Validate whether ${titleCase(correlation.a)} is an input, output, or sibling metric for ${titleCase(correlation.b)}.`,
+      confidence: confidenceLabel(Math.abs(correlation.score) * 100)
+    });
+  });
+  trends.slice(0, 2).forEach((trend) => {
+    reasoning.push({
+      finding: `${titleCase(trend.column)} is trending ${trend.direction}.`,
+      reasoningType: "Time-based pattern",
+      whyItMatters: "A sustained trend may require action, but period mix and seasonality must be ruled out.",
+      potentialCauses: ["Seasonality", "Demand shift", "Operational capacity", "Pricing or channel mix"],
+      alternativeExplanations: ["Late-period outliers", "Incomplete historical coverage", "Different segment composition"],
+      evidenceMissing: "Longer history, campaign calendar, operational events, and external market context.",
+      investigateNext: `Compare ${titleCase(trend.column)} by segment and month before treating it as systemic.`,
+      confidence: confidenceLabel(Math.abs(trend.change) + 50)
+    });
+  });
+  if (!reasoning.length) {
+    reasoning.push({
+      finding: "No strong causal claim should be made from this dataset yet.",
+      reasoningType: "Evidence gap",
+      whyItMatters: "The product avoids hallucinating causality when field coverage is limited.",
+      potentialCauses: ["Insufficient measures", "Missing dates", "Missing business dimensions"],
+      alternativeExplanations: limitations.slice(0, 3),
+      evidenceMissing: "More complete metrics, reliable dates, and business process context.",
+      investigateNext: "Add driver columns and rerun the analysis.",
+      confidence: "High Confidence"
+    });
+  }
+  if (categoryPerformance[0] && kpis[0]) {
+    reasoning.unshift({
+      finding: `${categoryPerformance[0].best.name} leads ${titleCase(categoryPerformance[0].categoryColumn)} performance.`,
+      reasoningType: "Segment contribution",
+      whyItMatters: `Leadership can compare the best and weakest segments against ${kpis[0].label}.`,
+      potentialCauses: ["Segment mix", "Different customer demand", "Operational execution", "Channel economics"],
+      alternativeExplanations: ["Duplicate records", "Uneven sample sizes", "Uncaptured cost differences"],
+      evidenceMissing: "Segment-level costs, customer counts, and source-system validation.",
+      investigateNext: `Audit what makes ${categoryPerformance[0].best.name} different from ${categoryPerformance[0].weakest.name}.`,
+      confidence: "Medium Confidence"
+    });
+  }
+  return reasoning.slice(0, 8);
+}
+
+function generateRootCauseInvestigations({ trends, categoryPerformance, correlations, anomalies, earlyWarnings, limitations }) {
+  const findings = [
+    trends[0]
+      ? {
+          finding: `${titleCase(trends[0].column)} ${trends[0].direction} trend`,
+          possibleCause: "Seasonality, demand changes, campaign timing, or operational capacity may be influencing the late-period movement.",
+          alternativeCause: "A few outlier records or a changed segment mix may be overstating the trend.",
+          evidenceSupporting: `${titleCase(trends[0].column)} changed by ${formatPercent(Math.abs(trends[0].change))}.`,
+          evidenceMissing: "Longer history, month labels, operational events, and external context.",
+          confidence: confidenceLabel(Math.abs(trends[0].change) + 45),
+          recommendedInvestigation: "Break the trend by segment, check outliers, and compare equivalent calendar periods."
+        }
+      : null,
+    categoryPerformance[0]
+      ? {
+          finding: `${categoryPerformance[0].best.name} outperforms ${categoryPerformance[0].weakest.name}`,
+          possibleCause: "The best segment may have stronger demand, better pricing, or better operational execution.",
+          alternativeCause: "The difference may come from missing cost data, duplicate rows, or sample-size imbalance.",
+          evidenceSupporting: `${categoryPerformance[0].best.name} totals ${formatNumber(categoryPerformance[0].best.total, { compact: true })} versus ${categoryPerformance[0].weakest.name} at ${formatNumber(categoryPerformance[0].weakest.total, { compact: true })}.`,
+          evidenceMissing: "Segment cost, customer count, conversion rate, and operating context.",
+          confidence: "Medium Confidence",
+          recommendedInvestigation: "Interview process owners and compare unit economics for the two segments."
+        }
+      : null,
+    correlations[0]
+      ? {
+          finding: `${titleCase(correlations[0].a)} is associated with ${titleCase(correlations[0].b)}`,
+          possibleCause: "The fields may share a business rule, common driver, or derived calculation.",
+          alternativeCause: "The relationship may be coincidental or caused by a third variable.",
+          evidenceSupporting: `Correlation is ${correlations[0].score.toFixed(2)}.`,
+          evidenceMissing: "Lineage, controlled comparisons, and time-lag analysis.",
+          confidence: correlations[0].strength === "strong" ? "Medium Confidence" : "Low Confidence",
+          recommendedInvestigation: "Trace metric definitions before using the relationship in a decision model."
+        }
+      : null,
+    earlyWarnings[0]
+      ? {
+          finding: earlyWarnings[0].title,
+          possibleCause: "The warning may be driven by data quality, segment concentration, volatility, or true business deterioration.",
+          alternativeCause: "A sparse sample or anomalous rows may overstate severity.",
+          evidenceSupporting: earlyWarnings[0].detail,
+          evidenceMissing: "Validated source refreshes and owner confirmation.",
+          confidence: earlyWarnings[0].severity === "Critical" || earlyWarnings[0].severity === "High" ? "High Confidence" : "Medium Confidence",
+          recommendedInvestigation: "Assign an owner to verify the alert and confirm whether action is needed."
+        }
+      : null
+  ].filter(Boolean);
+  return findings.length ? findings : [{ finding: "No major root-cause candidate", possibleCause: "Current fields are not rich enough for root-cause analysis.", alternativeCause: "The dataset may be stable.", evidenceSupporting: limitations[0] || "No severe signal detected.", evidenceMissing: "More dates, categories, and driver metrics.", confidence: "Low Confidence", recommendedInvestigation: "Collect richer driver data before asserting cause." }];
+}
+
+function generateEngineeringReview({ columns, rows, columnProfiles, semanticColumns, cleaningStudio }) {
+  const factCandidates = columnProfiles.filter((profile) => profile.type === "number").map((profile) => profile.name).slice(0, 6);
+  const dimensionCandidates = columnProfiles.filter((profile) => profile.type === "category" || profile.type === "date").map((profile) => profile.name).slice(0, 8);
+  return {
+    schemaQuality: cleaningStudio.readiness,
+    namingConventions: columns.some((column) => /\s/.test(column)) ? "Readable business names detected; warehouse models may prefer snake_case aliases." : "Column names are compact and model-friendly.",
+    dataTypes: `${factCandidates.length} fact-like numeric fields and ${dimensionCandidates.length} dimension/date fields detected.`,
+    lineageAssumptions: "Uploaded browser data has no source lineage yet; production should store source, import time, and transformation history.",
+    transformationRequirements: cleaningStudio.cleaningActions,
+    pipelineRisk: cleaningStudio.scores.trustScore < 75 ? "Medium to High" : "Low to Medium",
+    scalabilityConcerns: rows.length > 50000 ? "Large browser-side datasets should move profiling to backend workers." : "Current row count is suitable for browser MVP profiling.",
+    dataModelQuality: factCandidates.length && dimensionCandidates.length ? "Good candidate for a star schema." : "Needs clearer facts and dimensions before warehouse modeling.",
+    factTableCandidates: factCandidates,
+    dimensionTableCandidates: dimensionCandidates,
+    recommendation: factCandidates.length && dimensionCandidates.length ? "Use a star schema with uploaded rows as the fact table and product/customer/region/channel/date as dimensions where present." : "Start with a staging table, clean headers, and define facts/dimensions after field enrichment."
+  };
+}
+
+function generateAnalyticsEngineeringReview({ numericColumns, categoricalColumns, semanticColumns, kpis }) {
+  return {
+    semanticLayer: kpis.length ? `Define ${kpis.map((kpi) => kpi.label).slice(0, 4).join(", ")} in a reusable semantic layer.` : "Metric layer needs clearer KPI fields.",
+    metricLayer: "Centralize metric definitions so dashboard, assistant, forecasts, exports, and AI prompts use identical logic.",
+    factModel: numericColumns.length ? `Fact measures: ${numericColumns.slice(0, 6).map((profile) => titleCase(profile.name)).join(", ")}.` : "No fact measures detected.",
+    dimensionModel: categoricalColumns.length ? `Dimensions: ${categoricalColumns.slice(0, 6).map((profile) => titleCase(profile.name)).join(", ")}.` : "No reusable dimensions detected.",
+    recommendedWarehouseDesign: semanticColumns.customer?.length || semanticColumns.product?.length ? "Star schema with conformed customer/product/date/channel dimensions." : "Wide analytical table first, then snowflake dimensions when relationships are validated."
+  };
+}
+
+function generateFinancialAnalysis({ kpis, semanticColumns, concentration, periodComparison }) {
+  const revenue = kpis.find((kpi) => kpi.key === "revenue");
+  const cost = kpis.find((kpi) => kpi.key === "cost");
+  const profit = kpis.find((kpi) => kpi.key === "profitability");
+  return {
+    available: Boolean(revenue || cost || profit || semanticColumns.expense?.length),
+    marginAnalysis: profit ? profit.evidence : "Margin analysis needs revenue and cost/profit fields.",
+    costAnalysis: cost ? cost.evidence : "No clear cost or expense measure was detected.",
+    profitabilityAnalysis: profit ? `Profitability is measurable. ${profit.evidence}` : "Profitability is not fully measurable from current columns.",
+    contributionAnalysis: concentration[0]?.evidence || "Contribution analysis needs a category and financial measure.",
+    varianceAnalysis: periodComparison?.evidence || "Financial variance analysis needs dated financial measures.",
+    financialRiskAssessment: cost && revenue && cost.value / Math.max(revenue.value, 1) > 0.75 ? "High cost intensity may pressure margin." : "No severe financial risk detected from available fields."
+  };
+}
+
+function generateOperationsAnalysis({ semanticColumns, categoryPerformance, concentration, earlyWarnings }) {
+  const inventory = semanticColumns.inventory?.[0];
+  const branch = semanticColumns.branch?.[0];
+  return {
+    available: Boolean(inventory || branch || semanticColumns.status?.length || categoryPerformance.length),
+    bottlenecks: categoryPerformance[0] ? `${categoryPerformance[0].weakest.name} is the lowest-performing visible segment.` : "Bottlenecks need branch, status, supplier, inventory, or process fields.",
+    capacityConstraints: inventory ? `${titleCase(inventory.name)} can be monitored for capacity or shortage risk.` : "No inventory/capacity field detected.",
+    inventoryRisks: earlyWarnings.find((warning) => /inventory|stock/i.test(warning.title))?.detail || "No explicit inventory shortage alert detected.",
+    operationalConcentration: concentration.find((item) => /branch|supplier|status|region/i.test(item.category))?.evidence || "No operational concentration signal detected.",
+    processVariation: categoryPerformance[0] ? `${categoryPerformance[0].best.name} and ${categoryPerformance[0].weakest.name} show process variation worth investigating.` : "Process variation needs categorical operations fields.",
+    operationalHealthAssessment: earlyWarnings[0]?.severity === "Critical" || earlyWarnings[0]?.severity === "High" ? "Operational health needs review before action." : "Operational health appears acceptable for first-pass analysis."
+  };
+}
+
+function generateGrowthAnalysis({ semanticColumns, concentration, opportunities, categoryPerformance }) {
+  return {
+    available: Boolean(semanticColumns.customer?.length || semanticColumns.product?.length || semanticColumns.region?.length || semanticColumns.channel?.length),
+    customerConcentration: concentration.find((item) => /customer|client|account/i.test(item.category))?.evidence || "Customer concentration needs a customer field and revenue measure.",
+    productConcentration: concentration.find((item) => /product|sku|service/i.test(item.category))?.evidence || "Product concentration needs a product field and revenue measure.",
+    regionConcentration: concentration.find((item) => /region|country|market|city/i.test(item.category))?.evidence || "Region concentration needs geography fields.",
+    channelConcentration: concentration.find((item) => /channel|source|partner/i.test(item.category))?.evidence || "Channel concentration needs a channel field.",
+    expansionOpportunities: opportunities.slice(0, 3).map((item) => item.title),
+    retentionOpportunities: semanticColumns.churn?.length ? "Churn field detected; segment churn by customer, product, channel, or region." : "Retention opportunity detection improves with churn or repeat-purchase fields.",
+    growthOpportunityAssessment: categoryPerformance[0] ? `Scale the playbook behind ${categoryPerformance[0].best.name} while fixing ${categoryPerformance[0].weakest.name}.` : "Growth assessment needs customer, product, region, or channel performance fields."
+  };
+}
+
+function generateExecutiveConsulting({ earlyWarnings, opportunities, rootCauseInvestigations, financialAnalysis, operationsAnalysis, growthAnalysis, qualityScore }) {
+  const risks = earlyWarnings.slice(0, 3).map((warning) => ({
+    title: warning.title,
+    expectedImpact: warning.detail,
+    risk: warning.severity,
+    confidence: warning.severity === "Critical" || warning.severity === "High" ? "High Confidence" : "Medium Confidence",
+    tradeoffs: "Acting quickly reduces downside but may divert attention from growth experiments.",
+    recommendedAction: "Assign an owner, validate the source rows, and decide whether mitigation is needed."
+  }));
+  const opportunityItems = opportunities.slice(0, 3).map((opportunity) => ({
+    title: opportunity.title,
+    expectedImpact: opportunity.impact ? formatNumber(opportunity.impact, { compact: true }) : "Qualitative",
+    risk: "Execution risk",
+    confidence: `${opportunity.confidence} Confidence`,
+    tradeoffs: "Pursuing upside may require budget, operational capacity, or data enrichment.",
+    recommendedAction: opportunity.detail
+  }));
+  const decisions = [
+    {
+      title: "Clean or analyze now?",
+      expectedImpact: `Quality score is ${formatPercent(qualityScore)}.`,
+      risk: qualityScore < 75 ? "High" : "Medium",
+      confidence: confidenceLabel(qualityScore),
+      tradeoffs: "Cleaning improves trust but can change totals if duplicates are removed.",
+      recommendedAction: qualityScore < 75 ? "Clean first, then analyze the cleaned dataset." : "Proceed with analysis while tracking warnings."
+    },
+    {
+      title: "Scale winner or fix weakest segment?",
+      expectedImpact: growthAnalysis.growthOpportunityAssessment,
+      risk: "Strategic focus risk",
+      confidence: "Medium Confidence",
+      tradeoffs: "Scaling winners accelerates upside; fixing weak segments protects downside.",
+      recommendedAction: "Run a small experiment before reallocating major budget."
+    },
+    {
+      title: "Invest in data foundation?",
+      expectedImpact: financialAnalysis.available || operationsAnalysis.available ? "Better models will improve forecast and recommendation reliability." : "Current field gaps limit decision quality.",
+      risk: "Technical debt risk",
+      confidence: "High Confidence",
+      tradeoffs: "Data engineering work slows feature output but compounds future analysis quality.",
+      recommendedAction: "Create staging, semantic metrics, and lineage before using AI recommendations in production."
+    }
+  ];
+  return { risks, opportunities: opportunityItems, decisions, rootCauseFocus: rootCauseInvestigations[0] };
+}
+
 function uniqueProfiles(profiles) {
   const seen = new Set();
   return profiles.filter((profile) => {
@@ -645,14 +992,25 @@ function roleInsight(persona, focus, observation, evidence, riskOrOpportunity, r
     focus,
     observation,
     evidence: evidence || "Evidence is limited by the current uploaded dataset.",
+    risk: riskOrOpportunity,
+    opportunity: riskOrOpportunity,
     riskOrOpportunity,
     recommendedAction,
+    businessImpact: `This matters because ${recommendedAction.charAt(0).toLowerCase()}${recommendedAction.slice(1)}`,
+    confidence: confidenceLabel(confidenceLevel),
     confidenceLevel: Math.max(35, Math.min(96, Math.round(confidenceLevel)))
   };
 }
 
 function confidence(context) {
   return context.qualityScore * 0.62 + Math.min(14, context.trends.length * 3) + Math.min(10, context.correlations.length * 2) + Math.min(8, context.categoryPerformance.length * 2) + (context.forecasts.length ? 4 : 0);
+}
+
+function confidenceLabel(score) {
+  const normalized = Number.isFinite(score) ? score : 50;
+  if (normalized >= 80) return "High Confidence";
+  if (normalized >= 58) return "Medium Confidence";
+  return "Low Confidence";
 }
 
 function generateIntelligence(context) {
@@ -852,6 +1210,8 @@ function generateForecasts(rows, numericColumns, dateColumns) {
   const residualStd = Math.sqrt(average(residuals.map((value) => value ** 2)));
   const lastDate = points[points.length - 1].date;
   const lastValue = points[points.length - 1].value;
+  const volatilityScore = Math.min(100, meanY ? (residualStd / Math.abs(meanY)) * 100 : 100);
+  const seasonalitySignal = detectSeasonalitySignal(points);
 
   return [
     buildForecastWindow("30 Day Forecast", 30),
@@ -880,9 +1240,37 @@ function generateForecasts(rows, numericColumns, dateColumns) {
         decline: projected * 0.88
       },
       risk: growth < -10 ? "High" : growth < 0 ? "Medium" : residualStd > Math.abs(meanY) * 0.35 ? "Medium" : "Low",
+      volatilityScore,
+      seasonality: seasonalitySignal,
+      confidence: confidenceLabel(100 - volatilityScore - (points.length < 12 ? 18 : 0) - (seasonalitySignal.detected ? 8 : 0)),
+      explanation: `Forecast uses ${points.length >= 12 ? "linear trend with volatility bands" : "lightweight trend projection"}. Confidence is lower when volatility is high, history is short, or seasonality may be present.`,
+      trendDecomposition: {
+        direction: slope >= 0 ? "upward" : "downward",
+        slope,
+        residualStd,
+        seasonality: seasonalitySignal.label
+      },
       method: points.length >= 12 ? "linear trend with volatility bands" : "lightweight trend projection"
     };
   }
+}
+
+function detectSeasonalitySignal(points) {
+  const byMonth = new Map();
+  points.forEach((point) => {
+    const month = point.date.getMonth();
+    if (!byMonth.has(month)) byMonth.set(month, []);
+    byMonth.get(month).push(point.value);
+  });
+  if (byMonth.size < 3) return { detected: false, label: "Not enough monthly coverage for seasonality detection" };
+  const monthlyAverages = [...byMonth.values()].map(average);
+  const spread = Math.max(...monthlyAverages) - Math.min(...monthlyAverages);
+  const mean = average(monthlyAverages);
+  const detected = mean ? spread / Math.abs(mean) > 0.28 : false;
+  return {
+    detected,
+    label: detected ? "Possible seasonality or monthly mix effect detected" : "No strong seasonality signal detected"
+  };
 }
 
 function generateBoardroom({ qualityScore, trends, correlations, categoryPerformance, anomalies, opportunities, earlyWarnings }) {
@@ -1164,6 +1552,95 @@ function countDuplicates(rows) {
     seen.add(key);
   });
   return duplicates;
+}
+
+function findDuplicateColumns(columns) {
+  const counts = new Map();
+  columns.forEach((column) => counts.set(column.toLowerCase(), (counts.get(column.toLowerCase()) || 0) + 1));
+  return [...counts.entries()].filter(([, count]) => count > 1).map(([column]) => titleCase(column));
+}
+
+function detectCategoryInconsistency(rows, columnProfiles) {
+  return columnProfiles
+    .filter((profile) => profile.type === "category" || profile.type === "text")
+    .map((profile) => {
+      const normalized = new Map();
+      rows.forEach((row) => {
+        const raw = String(row[profile.name] ?? "");
+        const key = raw.trim().toLowerCase();
+        if (!key) return;
+        if (!normalized.has(key)) normalized.set(key, new Set());
+        normalized.get(key).add(raw);
+      });
+      const variants = [...normalized.entries()].filter(([, values]) => values.size > 1);
+      return variants.length
+        ? { column: profile.name, detail: `${titleCase(profile.name)} has inconsistent variants such as ${[...variants[0][1]].join(", ")}.` }
+        : null;
+    })
+    .filter(Boolean);
+}
+
+function detectPotentialDataLeakage(columnProfiles) {
+  return columnProfiles
+    .filter((profile) => /future|target|label|prediction|forecast|outcome|score/i.test(profile.name))
+    .map((profile) => ({ column: profile.name, detail: `${titleCase(profile.name)} may represent target, future, or model-output leakage.` }));
+}
+
+function detectPotentialDerivedColumns(columnProfiles) {
+  return columnProfiles
+    .filter((profile) => /rate|ratio|percent|percentage|margin|average|avg|total|score|index/i.test(profile.name))
+    .map((profile) => ({ column: profile.name, detail: `${titleCase(profile.name)} may be derived and should be traced to source fields.` }));
+}
+
+function detectPrimaryKeyIssues(rows, columnProfiles) {
+  return columnProfiles
+    .filter((profile) => /(^id$|_id$| id$|uuid|key)/i.test(profile.name))
+    .filter((profile) => profile.uniqueValues < rows.length)
+    .map((profile) => ({ column: profile.name, detail: `${titleCase(profile.name)} looks key-like but is not unique across rows.` }));
+}
+
+function detectForeignKeyIssues(columnProfiles) {
+  return columnProfiles
+    .filter((profile) => /_id$| id$/i.test(profile.name) && profile.cardinalityRate < 10)
+    .map((profile) => ({ column: profile.name, detail: `${titleCase(profile.name)} looks like a foreign key or dimension reference with repeated values.` }));
+}
+
+function explainReadiness({ readiness, duplicateCount, missingCells, invalidDates, invalidNumerics, outliers, trustScore }) {
+  const reasons = [];
+  if (duplicateCount) reasons.push(`${formatNumber(duplicateCount)} duplicate rows may inflate totals`);
+  if (missingCells) reasons.push(`${formatNumber(missingCells)} missing cells reduce completeness`);
+  if (invalidDates) reasons.push(`${formatNumber(invalidDates)} invalid date values limit forecasting`);
+  if (invalidNumerics) reasons.push(`${formatNumber(invalidNumerics)} invalid numeric values weaken KPI analysis`);
+  if (outliers.length) reasons.push(`${formatNumber(outliers.length)} outliers may distort averages`);
+  return reasons.length ? `${readiness}: ${reasons.join("; ")}. Trust score is ${formatPercent(trustScore)}.` : `${readiness}: quality controls found no major blockers. Trust score is ${formatPercent(trustScore)}.`;
+}
+
+function buildQualityCommentary({ readiness, duplicateCount, missingCells, invalidDates, invalidNumerics, outliers, trustScore }) {
+  if (readiness === "Ready For Analysis") {
+    return `This dataset is suitable for executive analysis. Trust score is ${formatPercent(trustScore)}, with no major duplication or validity blockers detected.`;
+  }
+  if (readiness === "Ready With Warnings") {
+    return `This dataset is usable for analysis but needs caution. ${formatNumber(duplicateCount)} duplicate rows, ${formatNumber(missingCells)} missing cells, ${formatNumber(invalidDates + invalidNumerics)} invalid values, and ${formatNumber(outliers.length)} outliers may affect confidence.`;
+  }
+  return `This dataset is not ready for high-stakes executive analysis. Cleaning should address duplicates, missing values, invalid fields, and outliers before forecasts or recommendations are trusted.`;
+}
+
+function normalizeHeaders(columns) {
+  const seen = new Map();
+  return (columns || []).map((column, index) => {
+    const base = titleCase(String(column || `Column ${index + 1}`).trim().replace(/[_-]+/g, " ")) || `Column ${index + 1}`;
+    const count = seen.get(base.toLowerCase()) || 0;
+    seen.set(base.toLowerCase(), count + 1);
+    return count ? `${base} ${count + 1}` : base;
+  });
+}
+
+function cleanValue(value) {
+  if (value === null || value === undefined) return "";
+  const trimmed = String(value).trim().replace(/\s+/g, " ");
+  const date = toDate(trimmed);
+  if (date && /[-/]/.test(trimmed)) return date.toISOString().slice(0, 10);
+  return trimmed;
 }
 
 function calculateQualityScore(rowCount, columnCount, profiles, duplicateCount, outlierCount) {

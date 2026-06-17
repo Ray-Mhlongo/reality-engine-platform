@@ -27,10 +27,12 @@ export function DecisionIntelligence({ analysis }) {
       <InvestigationMode investigation={analysis.investigation} />
       <SeniorDataAnalystMode seniorAnalyst={analysis.seniorAnalyst} />
       <DataTeamIntelligence dataTeam={analysis.dataTeam} />
+      <BusinessReasoning analysis={analysis} />
       <div className="grid gap-5 xl:grid-cols-[0.58fr_0.42fr]">
         <RelationshipMap graph={analysis.relationshipGraph} />
         <ForecastingEngine forecasts={analysis.forecasts} />
       </div>
+      <ExecutiveConsultingMode consulting={analysis.executiveConsulting} />
       <Boardroom boardroom={analysis.boardroom} />
       <div className="grid gap-5 xl:grid-cols-[0.54fr_0.46fr]">
         <OpportunityScanner opportunities={analysis.opportunities} />
@@ -116,8 +118,91 @@ function DataTeamIntelligence({ dataTeam }) {
             <p className="mt-3 text-sm leading-6 text-white/66"><strong className="text-white">Observation:</strong> {role.observation}</p>
             <p className="mt-2 text-sm leading-6 text-white/60"><strong className="text-white">Evidence:</strong> {role.evidence}</p>
             <p className="mt-2 text-sm leading-6 text-white/60"><strong className="text-white">Risk/opportunity:</strong> {role.riskOrOpportunity}</p>
+            <p className="mt-2 text-sm leading-6 text-white/60"><strong className="text-white">Business impact:</strong> {role.businessImpact}</p>
             <p className="mt-3 border-t border-white/10 pt-3 text-sm font-semibold leading-6 text-signal">{role.recommendedAction}</p>
           </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BusinessReasoning({ analysis }) {
+  const reviews = [
+    ["Data Engineering Review", analysis.engineeringReview.schemaQuality, analysis.engineeringReview.recommendation],
+    ["Analytics Engineering Review", analysis.analyticsEngineeringReview.semanticLayer, analysis.analyticsEngineeringReview.recommendedWarehouseDesign],
+    ["Financial Analysis Engine", analysis.financialAnalysis.marginAnalysis, analysis.financialAnalysis.financialRiskAssessment],
+    ["Operations Analysis Engine", analysis.operationsAnalysis.operationalHealthAssessment, analysis.operationsAnalysis.bottlenecks],
+    ["Growth Analysis Engine", analysis.growthAnalysis.growthOpportunityAssessment, analysis.growthAnalysis.retentionOpportunities]
+  ];
+
+  return (
+    <section className="panel reveal-card rounded-lg p-4 sm:p-6" id="reasoning">
+      <div className="mb-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">Business Reasoning Engine</p>
+        <h2 className="mt-1 text-2xl font-black text-white">Correlation is not treated as causation</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">
+          Reality Engine separates association, possible causation, coincidence, missing evidence, and next investigations before recommending action.
+        </p>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[0.58fr_0.42fr]">
+        <div className="grid gap-3">
+          {analysis.businessReasoning.slice(0, 4).map((item) => (
+            <article key={`${item.finding}-${item.reasoningType}`} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-extrabold text-white">{item.finding}</h3>
+                <span className="text-xs font-black text-signal">{item.confidence}</span>
+              </div>
+              <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-white/42">{item.reasoningType}</p>
+              <p className="mt-3 text-sm leading-6 text-white/62"><strong className="text-white">Why it matters:</strong> {item.whyItMatters}</p>
+              <p className="mt-2 text-sm leading-6 text-white/62"><strong className="text-white">Alternative explanations:</strong> {item.alternativeExplanations.join("; ")}</p>
+              <p className="mt-2 text-sm leading-6 text-white/62"><strong className="text-white">Investigate next:</strong> {item.investigateNext}</p>
+            </article>
+          ))}
+        </div>
+        <div className="grid gap-3">
+          {reviews.map(([title, observation, recommendation]) => (
+            <article key={title} className="rounded-lg border border-signal/20 bg-signal/10 p-4">
+              <h3 className="font-extrabold text-white">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-white/62">{observation}</p>
+              <p className="mt-3 text-sm font-semibold leading-6 text-signal">{recommendation}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ExecutiveConsultingMode({ consulting }) {
+  const groups = [
+    ["Top 3 Risks", consulting.risks],
+    ["Top 3 Opportunities", consulting.opportunities],
+    ["Top 3 Decisions Leadership Must Make", consulting.decisions]
+  ];
+  return (
+    <section className="panel reveal-card rounded-lg p-4 sm:p-6" id="executive-consulting">
+      <div className="mb-5">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-signal">Executive Consulting Mode</p>
+        <h2 className="mt-1 text-2xl font-black text-white">Risks, opportunities, decisions, and tradeoffs</h2>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-3">
+        {groups.map(([title, items]) => (
+          <div key={title} className="grid content-start gap-3">
+            <h3 className="font-extrabold text-white">{title}</h3>
+            {items.map((item) => (
+              <article key={item.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="font-extrabold text-white">{item.title}</h4>
+                  <span className="text-xs font-black text-signal">{item.confidence}</span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-white/62"><strong className="text-white">Expected impact:</strong> {item.expectedImpact}</p>
+                <p className="mt-2 text-sm leading-6 text-white/62"><strong className="text-white">Risk:</strong> {item.risk}</p>
+                <p className="mt-2 text-sm leading-6 text-white/62"><strong className="text-white">Tradeoffs:</strong> {item.tradeoffs}</p>
+                <p className="mt-3 text-sm font-semibold leading-6 text-signal">{item.recommendedAction}</p>
+              </article>
+            ))}
+          </div>
         ))}
       </div>
     </section>
@@ -334,10 +419,16 @@ function ForecastingEngine({ forecasts }) {
             <ForecastMetric title="Risk indicator" value={active.risk} tone={active.risk === "High" ? "red" : "signal"} />
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <ForecastMetric title="Forecast confidence" value={active.confidence || "Medium Confidence"} />
+            <ForecastMetric title="Volatility score" value={formatPercent(active.volatilityScore || 0)} tone={active.volatilityScore > 35 ? "red" : "signal"} />
+            <ForecastMetric title="Seasonality" value={active.seasonality?.detected ? "Possible" : "Limited"} />
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <ForecastMetric title="Growth case" value={formatNumber(active.scenarios.growth, { compact: true })} />
             <ForecastMetric title="Stable case" value={formatNumber(active.scenarios.stable, { compact: true })} />
             <ForecastMetric title="Decline case" value={formatNumber(active.scenarios.decline, { compact: true })} tone="red" />
           </div>
+          <p className="mt-4 text-xs leading-5 text-white/50">{active.explanation}</p>
           <p className="mt-4 text-xs leading-5 text-white/44">Method: {active.method}. Confidence interval: {formatNumber(active.low, { compact: true })} to {formatNumber(active.high, { compact: true })}.</p>
         </>
       ) : (

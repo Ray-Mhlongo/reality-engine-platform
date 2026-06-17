@@ -65,8 +65,15 @@ export function buildInsightsExportRows(analysis) {
       Section: "Data Team Intelligence",
       Type: item.persona,
       Title: item.observation,
-      Detail: `${item.evidence} Recommended action: ${item.recommendedAction}`,
+      Detail: `${item.evidence} Business impact: ${item.businessImpact} Recommended action: ${item.recommendedAction}`,
       Priority: `${item.confidenceLevel}% confidence`
+    })),
+    ...analysis.executiveConsulting.decisions.map((item) => ({
+      Section: "Executive Consulting",
+      Type: "Leadership Decision",
+      Title: item.title,
+      Detail: `${item.expectedImpact} Tradeoffs: ${item.tradeoffs} Recommended action: ${item.recommendedAction}`,
+      Priority: item.confidence
     }))
   ];
 }
