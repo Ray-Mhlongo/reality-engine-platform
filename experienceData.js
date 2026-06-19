@@ -6,15 +6,15 @@ window.experienceData = [
     evidence: ["PC Parts Market Intelligence", "Degree Does Not Equal Ability", "Beyond Hospitals"]
   },
   {
-    title: "Portfolio products",
-    type: "Product development",
-    summary: "I build practical products that connect analytics, workflow design, automation, AI integration, and business operations.",
-    evidence: ["Cathdel Creamy", "Insight Rides", "Ray AI"]
+    title: "Operational reporting and workflow solutions",
+    type: "Business process and reporting experience",
+    summary: "I design practical workflows that connect data collection, reporting, automation, information management, and business operations.",
+    evidence: ["Cathdel Creamy", "Insight Rides", "LearnView Nexus", "Church Member Verification System"]
   },
   {
     title: "Business and technology learning",
     type: "Career development",
-    summary: "I combine analytics learning with IT support, networking, automation, product development, and business understanding to approach problems from both technical and stakeholder perspectives.",
+    summary: "I combine analytics learning with IT support, networking, workflow automation, and business understanding to approach problems from both technical and stakeholder perspectives.",
     evidence: ["Google IT Support", "Cisco learning", "Microsoft 365 Fundamentals"]
   }
 ];

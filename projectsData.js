@@ -2,18 +2,18 @@ window.projectsData = [
   {
     title: "Reality Engine",
     link: "reality-engine.html",
-    category: "AI Powered Decision Intelligence System",
-    summary: "Reality Engine transforms raw datasets into discoveries, forecasts, simulations, risks, opportunities, and executive recommendations.",
-    businessProblem: "Traditional dashboards require users to know what to ask. Leaders need a system that investigates data automatically and explains what matters.",
-    solution: "I built a React and Tailwind decision intelligence app with local CSV/XLSX processing, automated profiling, AI investigation mode, relationship discovery, forecasting, simulations, executive boardroom personas, and exportable reports.",
-    tools: ["React", "Tailwind CSS", "Chart.js", "JavaScript", "Vite", "OpenRouter-ready AI", "Google Apps Script API", "PostgreSQL-ready architecture"],
-    skills: ["Product design", "Data profiling", "Decision intelligence", "Forecasting", "Simulation", "AI assistant design", "Executive reporting", "Frontend engineering"],
+    category: "Decision intelligence and business analysis platform",
+    summary: "A decision support project that profiles uploaded datasets, identifies trends and anomalies, supports scenario analysis, and produces executive reporting outputs.",
+    businessProblem: "Business users often receive raw files or static dashboards without enough guidance on trends, risks, anomalies, or possible next actions.",
+    solution: "I designed an analytical workflow that combines local CSV/XLSX processing, automated data profiling, relationship detection, forecasting, scenario analysis, risk alerts, and exportable reporting.",
+    tools: ["React", "Tailwind CSS", "Chart.js", "JavaScript", "Vite", "CSV/XLSX parsing", "Google Apps Script API", "PostgreSQL-ready architecture"],
+    skills: ["Data profiling", "Decision support", "Trend analysis", "Scenario analysis", "Forecasting", "Exception reporting", "Executive reporting", "Business analysis"],
     insights: [
-      "Users receive insights even before asking a question.",
-      "The system detects risks, opportunities, anomalies, relationships, and forecasts from uploaded business data.",
-      "Demo mode lets recruiters test the full product without uploading a file."
+      "Uploaded files can be assessed for completeness, duplicates, field types, and analytical readiness.",
+      "The workflow highlights risks, opportunities, anomalies, relationships, and forecast ranges from business data.",
+      "Demo mode allows recruiters to review the reporting workflow without providing their own dataset."
     ],
-    businessValue: "Reality Engine shows how raw data can become executive decisions, not just dashboards, by combining automated analysis, prediction, simulation, and recommendations.",
+    businessValue: "Reality Engine demonstrates how raw data can be converted into decision support through profiling, trend analysis, forecasting, scenario testing, and executive reporting.",
     screenshots: [],
     sourceLink: "https://github.com/Ray-Mhlongo/reality-engine-platform"
   },
@@ -39,10 +39,10 @@ window.projectsData = [
   {
     title: "PC Parts Market Intelligence",
     link: "pc-price-analysis.html",
-    category: "SQL Server and Excel business intelligence",
-    summary: "A market research and analytics project focused on the South African computer hardware industry.",
-    businessProblem: "PC part prices vary across retailers, provinces, brands, categories, and stock levels, making fair pricing and market performance difficult to compare.",
-    solution: "I designed a relational SQL Server database, generated realistic retail records, wrote analytical SQL queries, and built Excel dashboards for pricing, sales, inventory, and retailer insight.",
+    category: "Retail pricing and market analysis",
+    summary: "A retail market analysis project that models product, pricing, retailer, inventory, sales, and customer data to support pricing and category decisions.",
+    businessProblem: "Computer hardware pricing, stock availability, and retailer performance are difficult to compare when product listings, sales records, and regional pricing data are not consolidated.",
+    solution: "I designed a relational SQL Server model, structured realistic retail records, wrote analytical SQL queries, and built Excel reporting views for pricing, sales, inventory, and retailer analysis.",
     tools: ["SQL Server Management Studio", "T SQL", "Excel", "Pivot Style Analysis", "Dashboard Design", "Data Modeling", "Business Intelligence", "Data Visualization"],
     skills: ["Relational database design", "SQL joins and aggregations", "Window functions", "Pricing analysis", "Inventory analysis", "Customer analysis", "Business storytelling"],
     insights: [
@@ -51,16 +51,16 @@ window.projectsData = [
       "Inventory risk appeared in low stock and out of stock listings.",
       "Customer segment analysis helped reveal different purchasing behaviors."
     ],
-    businessValue: "The project helps decision makers compare pricing, monitor stock risk, benchmark retailers, and understand customer purchasing patterns.",
+    businessValue: "The project supports pricing insight, stock monitoring, retailer comparison, category performance tracking, and customer purchasing analysis.",
     screenshots: ["Hero Image.png", "Dashboard.png", "Sales Analysis.png", "Pricing Analysis.png", "Inventory Analysis.png", "Products.png", "Retailer Listings.png", "Orders.png", "Product & Pricing Model.png", "Sales & Customer Model.png", "SQL_QUERRY.png"]
   },
   {
     title: "Degree Does Not Equal Ability: Investigating South Africa's IT Skills Gap",
     link: "it-skills-gap.html",
-    category: "Labor market analytics",
-    summary: "A research analytics case study investigating whether formal qualifications alone are sufficient indicators of workplace readiness in South Africa's technology sector.",
+    category: "Workforce analytics and skills demand assessment",
+    summary: "A workforce analytics project comparing graduate output, digital role demand, entry-level vacancies, and skills mismatch indicators.",
     businessProblem: "South African graduates often hold formal qualifications, yet employers continue reporting shortages in digital and technology roles.",
-    solution: "I integrated public education, employment, labor market, and digital skills data to compare graduate output, vacancy pressure, entry level barriers, and skills mismatch evidence.",
+    solution: "I consolidated public education, employment, labor market, and digital skills data into an evidence framework for graduate outcomes, vacancy pressure, entry-level barriers, and skills demand.",
     tools: ["Excel", "Data Analysis", "Labor Market Analytics", "Research Analysis", "Data Storytelling", "Business Intelligence"],
     skills: ["Evidence matrix design", "KPI development", "Research synthesis", "Executive dashboarding", "Insight writing"],
     insights: [
@@ -69,14 +69,14 @@ window.projectsData = [
       "Entry level pathways are not working clearly enough.",
       "Degrees remain valuable, but practical evidence of ability matters."
     ],
-    businessValue: "The project reframes the hiring conversation from degree versus skill to degree plus evidence of ability.",
+    businessValue: "The project supports workforce planning discussions by showing where qualifications, practical evidence, and entry-level pathways need to be assessed together.",
     screenshots: ["executive-dashboard.png", "evidence-matrix.png", "case-study-narrative.png"]
   },
   {
     title: "Beyond Hospitals: The Social Drivers of Health in South Africa",
     link: "beyond-hospitals.html",
-    category: "Public sector analytics",
-    summary: "A public health analytics case study investigating how social and economic conditions influence health outcomes across South Africa.",
+    category: "Public health and socioeconomic data analysis",
+    summary: "A public health and socioeconomic analysis project comparing provincial health indicators with education, poverty, employment, and service access metrics.",
     businessProblem: "Health outcomes differ across provinces, and those differences cannot be explained by hospitals alone.",
     solution: "I integrated health outcomes, disease burden, education, employment, income, infrastructure, housing, and service access data into a province level analytical framework.",
     tools: ["Excel", "Public Sector Analytics", "Data Integration", "Research Analysis", "Dashboard Design", "Data Storytelling", "Business Intelligence"],
@@ -87,7 +87,7 @@ window.projectsData = [
       "Education and service access align with stronger social health scores.",
       "Findings show association rather than proof of causation."
     ],
-    businessValue: "The project supports evidence based public sector planning by linking health outcomes with social drivers such as education, poverty, employment, and infrastructure.",
+    businessValue: "The project supports evidence based public sector reporting by connecting health outcomes with social drivers such as education, poverty, employment, infrastructure, and service access.",
     screenshots: ["executive-dashboard.png", "provincial-health-comparison.png", "case-study-recommendations.png", "data-quality.png"]
   }
 ];

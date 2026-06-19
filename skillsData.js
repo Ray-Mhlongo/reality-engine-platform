@@ -7,5 +7,5 @@ window.skillsData = [
   { name: "Networking", level: "Foundational", evidence: ["Networking skill page", "Cisco learning"], details: "Networking fundamentals, IT support context, and systems thinking." },
   { name: "Business analysis", level: "Strong", evidence: ["All portfolio projects and products"], details: "Turning raw data into business questions, insights, recommendations, and practical solutions." },
   { name: "Dashboard design", level: "Strong", evidence: ["PC Parts Market Intelligence", "Degree Does Not Equal Ability", "Beyond Hospitals"], details: "KPI layout, clear visuals, summary reporting, and decision support." },
-  { name: "Product development", level: "Developing", evidence: ["Cathdel Creamy", "Insight Rides", "Ray AI"], details: "Building business applications, management platforms, AI features, and operational workflows." }
+  { name: "Workflow automation", level: "Developing", evidence: ["Cathdel Creamy", "Insight Rides", "LearnView Nexus", "Church Member Verification System"], details: "Structuring operational records, reporting workflows, process controls, and automation-ready business processes." }
 ];
